@@ -25,6 +25,21 @@ export const deleteItem = (id: string) =>
 export const getStores = () => request<{ stores: Store[] }>('/stores')
 
 // Deals
+export const getDeal = (id: string) =>
+  request<{ deal: Deal & { tier?: AlertTier }; related: Deal[] }>(`/deals/${id}`)
+
+export const addToListFromDeal = (deal: Pick<Deal, 'id' | 'item_name' | 'item_brand' | 'store_id' | 'sale_price'>) =>
+  request<{ item: Item }>('/list', {
+    method: 'POST',
+    body: JSON.stringify({
+      deal_id: deal.id,
+      store_id: deal.store_id,
+      item_name: deal.item_name,
+      item_brand: deal.item_brand,
+      target_price: deal.sale_price,
+    }),
+  })
+
 export const getDeals = (params?: { store_id?: string; category?: string; search?: string }) => {
   const q = new URLSearchParams()
   if (params?.store_id) q.set('store_id', params.store_id)

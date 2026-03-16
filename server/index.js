@@ -5,6 +5,7 @@ const { createClient } = require('@supabase/supabase-js');
 const { getRxPrices, WALMART_GENERICS } = require('./connectors/pharmacy');
 const { scrapeAll: flippScrapeAll } = require('./connectors/flipp');
 const { enrichDeal, categorizeDeal, qualityScore } = require('./services/dealCategorizer');
+const { enrichDealRecord } = require('./services/dealEnricher');
 const { classifyStack, classifyDeal, TIERS } = require('./services/alertSystem');
 const { getGasIntelligence } = require('./connectors/gas');
 
@@ -221,6 +222,96 @@ app.get('/api/deals/hot', async (req, res) => {
   } catch (err) {
     console.error('GET /api/deals/hot error:', err);
     res.status(500).json({ error: 'Failed to fetch hot deals' });
+  }
+});
+
+// Get single deal by ID
+app.get('/api/deals/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { data, error } = await supabase
+      .from('deals')
+      .select('*, stores(name, chain, type, coupon_stacking_policy)')
+      .eq('id', id)
+      .single();
+    if (error) throw error;
+    if (!data) return res.status(404).json({ error: 'Deal not found' });
+
+    // Enrich with tier + brand/size extraction
+    const tier = classifyDeal(data.sale_price, data.original_price);
+    const enriched = enrichDealRecord(data);
+
+    // Related deals from same store (top 5, excluding this deal)
+    const { data: related } = await supabase
+      .from('deals')
+      .select('*, stores(name, chain, type)')
+      .eq('store_id', data.store_id)
+      .neq('id', id)
+      .or('valid_until.is.null,valid_until.gte.' + new Date().toISOString().slice(0, 10))
+      .order('discount_pct', { ascending: false })
+      .limit(5);
+
+    res.json({ deal: { ...enriched, tier }, related: related || [] });
+  } catch (err) {
+    console.error('GET /api/deals/:id error:', err);
+    res.status(500).json({ error: 'Failed to fetch deal' });
+  }
+});
+
+// Enrich all deals with null brand — run brand/size extraction
+app.post('/api/deals/enrich', async (req, res) => {
+  const key = req.headers['x-scraper-key'];
+  if (key !== process.env.SCRAPER_KEY && process.env.NODE_ENV === 'production') {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  try {
+    const { data: deals, error } = await supabase
+      .from('deals')
+      .select('id, item_name, item_brand')
+      .is('item_brand', null)
+      .limit(500);
+    if (error) throw error;
+
+    let updated = 0;
+    for (const deal of (deals || [])) {
+      const enriched = enrichDealRecord(deal);
+      if (enriched.item_brand) {
+        await supabase
+          .from('deals')
+          .update({ item_brand: enriched.item_brand })
+          .eq('id', deal.id);
+        updated++;
+      }
+    }
+    res.json({ enriched: updated, total_checked: (deals || []).length });
+  } catch (err) {
+    console.error('POST /api/deals/enrich error:', err);
+    res.status(500).json({ error: 'Enrichment failed' });
+  }
+});
+
+// Add deal to My List
+app.post('/api/list', async (req, res) => {
+  try {
+    const { deal_id, store_id, item_name, item_brand, target_price, household_id = 'default' } = req.body;
+    if (!item_name) return res.status(400).json({ error: 'item_name is required' });
+
+    const { data, error } = await supabase
+      .from('items')
+      .insert([{
+        name: item_name,
+        brand: item_brand || null,
+        notes: deal_id ? `deal:${deal_id}` : null,
+        quantity: 1,
+        household_id,
+      }])
+      .select()
+      .single();
+    if (error) throw error;
+    res.status(201).json({ item: data });
+  } catch (err) {
+    console.error('POST /api/list error:', err);
+    res.status(500).json({ error: 'Failed to add to list' });
   }
 });
 

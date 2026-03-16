@@ -335,11 +335,32 @@ export function Pantry() {
               {[...Array(3)].map((_, i) => <div key={i} className="h-14 bg-provision-surface rounded-lg animate-pulse" />)}
             </div>
           ) : items.length === 0 ? (
-            <div className="text-center py-10">
-              <Package size={32} className="text-provision-muted mx-auto mb-3" />
-              <p className="text-provision-dim text-sm">Your pantry is empty</p>
-              <button onClick={() => setTab('add')} className="mt-3 px-4 py-2 bg-provision-savings text-black font-semibold rounded-lg text-sm hover:bg-green-300 transition-colors">
-                Add First Item
+            <div className="space-y-4">
+              <div className="text-center pt-6 pb-2">
+                <Package size={32} className="text-provision-muted mx-auto mb-3" />
+                <p className="text-provision-text font-semibold">Start tracking what you have</p>
+                <p className="text-provision-dim text-sm mt-1">Add common items so Provision can tell you when you're running low.</p>
+              </div>
+              <div className="flex flex-wrap gap-2 justify-center">
+                {['Paper Towels', 'Toilet Paper', 'Dish Soap', 'Laundry Detergent', 'Olive Oil', 'Pasta', 'Rice', 'Canned Tomatoes', 'Coffee', 'Shampoo'].map(suggestion => (
+                  <button
+                    key={suggestion}
+                    onClick={async () => {
+                      await fetch(`${API}/pantry`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ item_name: suggestion, quantity: 1 }),
+                      })
+                      fetchPantry()
+                    }}
+                    className="px-3 py-1.5 rounded-full text-xs font-medium border bg-provision-surface border-provision-border text-provision-dim hover:text-provision-text hover:border-provision-savings/50 transition-colors"
+                  >
+                    + {suggestion}
+                  </button>
+                ))}
+              </div>
+              <button onClick={() => setTab('add')} className="w-full py-2.5 bg-provision-savings text-black font-semibold rounded-lg text-sm hover:bg-green-300 transition-colors">
+                Add My Own Item
               </button>
             </div>
           ) : (

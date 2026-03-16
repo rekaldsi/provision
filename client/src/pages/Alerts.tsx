@@ -130,6 +130,7 @@ function FilterChip({ label, active, onClick }: { label: string; active: boolean
 
 export function Alerts() {
   const [alerts, setAlerts] = useState<Alert[]>([])
+  const [topDeals, setTopDeals] = useState<Deal[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<string | null>(null)
 
@@ -138,9 +139,14 @@ export function Alerts() {
   async function fetchAlerts() {
     setLoading(true)
     try {
-      const r = await fetch(`${API}/alerts`)
-      const d = await r.json()
-      setAlerts(d.alerts || [])
+      const [alertsRes, dealsRes] = await Promise.all([
+        fetch(`${API}/alerts`).then(r => r.json()),
+        fetch(`${API}/deals?quality_min=0`).then(r => r.json()),
+      ])
+      setAlerts(alertsRes.alerts || [])
+      // Top 10 deals by discount_pct as fallback content
+      const sorted = (dealsRes.deals || []).slice(0, 10)
+      setTopDeals(sorted)
     } catch { /* noop */ }
     setLoading(false)
   }
@@ -157,12 +163,12 @@ export function Alerts() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Bell size={18} className="text-provision-savings" />
-            <h1 className="text-xl font-bold text-provision-text">Alerts</h1>
+            <h1 className="text-xl font-bold text-provision-text">Deal Alerts</h1>
             {alerts.length > 0 && (
               <span className="px-1.5 py-0.5 bg-provision-savings/20 text-provision-savings rounded-full text-xs font-bold">{alerts.length}</span>
             )}
           </div>
-          <p className="text-provision-dim text-sm">Near Free · Free · Profit · Hot Deals</p>
+          <p className="text-provision-dim text-sm">Hot deals matching your preferences</p>
         </div>
         <button
           onClick={fetchAlerts}
@@ -189,7 +195,7 @@ export function Alerts() {
         <div className="text-center py-10 text-provision-dim text-sm">Loading alerts...</div>
       )}
 
-      {!loading && alerts.length === 0 && (
+      {!loading && alerts.length === 0 && topDeals.length === 0 && (
         <div className="text-center py-12">
           <Zap size={36} className="text-provision-muted mx-auto mb-3" />
           <p className="text-provision-text font-medium">No hot alerts right now</p>
@@ -215,6 +221,40 @@ export function Alerts() {
             <p className="text-xs font-semibold uppercase tracking-wide text-provision-dim">Other Hot Deals</p>
           )}
           {(filter ? filtered : allOtherAlerts).map((alert, i) => <AlertCard key={i} alert={alert} />)}
+        </div>
+      )}
+
+      {/* Top deals by discount when no tier-based alerts */}
+      {!loading && !filter && alerts.length === 0 && topDeals.length > 0 && (
+        <div className="space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-provision-dim">Top 10 Deals This Week</p>
+          {topDeals.map((deal, i) => {
+            const discountPct = deal.discount_pct ? Math.round(deal.discount_pct) : null
+            return (
+              <div key={deal.id} className="rounded-xl border border-provision-border bg-provision-surface p-4 space-y-1.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-provision-text leading-tight truncate">{deal.item_name}</p>
+                    {deal.stores?.name && (
+                      <p className="text-xs text-provision-dim mt-0.5 flex items-center gap-1">
+                        <Tag size={10} />
+                        {deal.stores.name}
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-lg font-bold text-emerald-400">
+                      {deal.sale_price != null ? `$${deal.sale_price.toFixed(2)}` : 'See Ad'}
+                    </p>
+                    {discountPct && discountPct > 0 && (
+                      <p className="text-xs text-provision-savings font-semibold">−{discountPct}%</p>
+                    )}
+                  </div>
+                </div>
+                <p className="text-xs text-provision-dim">Matched: Hot Deals filter</p>
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
