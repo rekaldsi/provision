@@ -47,6 +47,24 @@ export const getShoppingPlan = () => request<ShoppingPlanResponse>('/shopping-pl
 // Stats
 export const getStats = () => request<Stats>('/stats')
 
+// Alerts
+export const getAlerts = () => request<{ alerts: AlertItem[]; total: number }>('/alerts')
+
+// Pharmacy
+export const getRxPrices = (drug: string, zip?: string) => {
+  const q = new URLSearchParams({ drug, ...(zip ? { zip } : {}) })
+  return request<RxComparison>(`/pharmacy/prices?${q}`)
+}
+export const getWalmartGenerics = (search?: string) => {
+  const q = search ? `?search=${encodeURIComponent(search)}` : ''
+  return request<{ generics: WalmartGeneric[]; total: number }>(`/pharmacy/walmart-generics${q}`)
+}
+export const getRxList = () => request<{ rx_list: RxItem[] }>('/rx-list')
+export const addRxItem = (data: Partial<RxItem>) =>
+  request<{ rx: RxItem }>('/rx-list', { method: 'POST', body: JSON.stringify(data) })
+export const deleteRxItem = (id: string) =>
+  request<{ deleted: boolean }>(`/rx-list/${id}`, { method: 'DELETE' })
+
 // Types
 export interface Item {
   id: string
@@ -81,6 +99,7 @@ export interface Deal {
   store_name?: string
   store_chain?: string
   store_type?: string
+  stores?: { name: string; chain?: string; type?: string }
   sale_price?: number
   original_price?: number
   unit?: string
@@ -171,4 +190,67 @@ export interface Stats {
   active_deals: number
   list_items: number
   near_free_deals: number
+  rx_tracked?: number
+}
+
+export interface AlertTier {
+  label: string
+  color: string
+  bgColor: string
+  emoji: string
+}
+
+export interface AlertItem {
+  type: string
+  tier: AlertTier
+  deal: Deal
+  item_matched: Item | null
+  on_my_list: boolean
+  message: string
+  priority: number
+}
+
+export interface RxItem {
+  id: string
+  drug_name: string
+  drug_generic?: string
+  dosage?: string
+  quantity: number
+  form?: string
+  notes?: string
+  household_id: string
+  created_at: string
+}
+
+export interface RxPrice {
+  source: string
+  pharmacy_name: string
+  price: number | null
+  coupon_url?: string
+  url?: string
+  quantity?: number
+  note?: string
+  advantage?: string
+  price_90_day?: number
+  dosages_covered?: string[]
+  is_on_walmart_list?: boolean
+}
+
+export interface RxComparison {
+  drug_name: string
+  prices: RxPrice[]
+  warehouse_notes: RxPrice[]
+  cheapest: RxPrice | null
+  walmart_generic: RxPrice | null
+  on_walmart_4_list: boolean
+  comparison_note: string
+  goodrx_url: string
+  costplus_url: string
+}
+
+export interface WalmartGeneric {
+  drug: string
+  dosages: string[]
+  qty30: number
+  qty90: number
 }

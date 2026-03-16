@@ -1,22 +1,27 @@
 import { useEffect, useState } from 'react'
-import { TrendingDown, Zap, Gift, ShoppingCart, ArrowRight } from 'lucide-react'
+import { TrendingDown, Zap, Gift, ShoppingCart, ArrowRight, Bell, Pill, AlertTriangle } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { getStats, getDeals, matchDeals, type Stats, type DealMatch } from '@/lib/api'
 import { DashboardCard } from '@/components/DashboardCard'
 import { DealCard } from '@/components/DealCard'
-import { formatPrice } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 
 export function Dashboard() {
   const [stats, setStats] = useState<Stats | null>(null)
   const [matches, setMatches] = useState<DealMatch[]>([])
+  const [alerts, setAlerts] = useState<number>(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([getStats(), matchDeals()])
-      .then(([s, m]) => {
+    Promise.all([
+      getStats(),
+      matchDeals(),
+      fetch('/api/alerts').then(r => r.json()).catch(() => ({ alerts: [] })),
+    ])
+      .then(([s, m, a]) => {
         setStats(s)
         setMatches(m.matches)
+        setAlerts(a.alerts?.length || 0)
       })
       .catch(console.error)
       .finally(() => setLoading(false))
@@ -30,9 +35,19 @@ export function Dashboard() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold text-provision-text tracking-tight">PROVISION</h1>
-        <p className="text-sm text-provision-dim mt-0.5">Stack deep. Buy smart. Give back.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-provision-text tracking-tight">PROVISION</h1>
+          <p className="text-sm text-provision-dim mt-0.5">Stack deep. Buy smart. Give back.</p>
+        </div>
+        {alerts > 0 && (
+          <Link to="/alerts">
+            <div className="relative p-2">
+              <Bell size={20} className="text-provision-savings" />
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full text-[9px] font-bold text-white flex items-center justify-center">{alerts}</span>
+            </div>
+          </Link>
+        )}
       </div>
 
       {/* Stats grid */}
@@ -57,11 +72,11 @@ export function Dashboard() {
           sublabel="< $0.25 final"
         />
         <DashboardCard
-          label="Best Matches"
-          value={loading ? '—' : String(topDealsCount)}
-          icon={Gift}
+          label="Hot Alerts"
+          value={loading ? '—' : String(alerts)}
+          icon={Bell}
           variant="savings"
-          sublabel="≥30% off on list"
+          sublabel="≥40% off"
         />
       </div>
 
@@ -123,6 +138,18 @@ export function Dashboard() {
 
       {/* Quick nav */}
       <div className="grid grid-cols-2 gap-3">
+        <Link to="/alerts">
+          <div className="rounded-lg border border-provision-border bg-provision-surface p-4 hover:border-provision-savings/40 transition-colors">
+            <p className="text-xs text-provision-dim mb-1">🔥 Hot</p>
+            <p className="text-sm font-medium text-provision-text">Near Free · Free · Profit</p>
+          </div>
+        </Link>
+        <Link to="/pharmacy">
+          <div className="rounded-lg border border-provision-border bg-provision-surface p-4 hover:border-provision-savings/40 transition-colors">
+            <p className="text-xs text-provision-dim mb-1">💊 Rx</p>
+            <p className="text-sm font-medium text-provision-text">Compare Rx Prices</p>
+          </div>
+        </Link>
         <Link to="/deals">
           <div className="rounded-lg border border-provision-border bg-provision-surface p-4 hover:border-white/10 transition-colors">
             <p className="text-xs text-provision-dim mb-1">Browse</p>

@@ -1,17 +1,20 @@
 import { BrowserRouter as Router, Routes, Route, NavLink, useLocation } from 'react-router-dom'
-import { LayoutGrid, List, Tag, CalendarCheck, Layers } from 'lucide-react'
+import { LayoutGrid, List, Tag, CalendarCheck, Bell, Pill } from 'lucide-react'
 import { Dashboard } from '@/pages/Dashboard'
 import { MyList } from '@/pages/MyList'
 import { Deals } from '@/pages/Deals'
 import { ShoppingPlan } from '@/pages/ShoppingPlan'
 import { StackDetail } from '@/pages/StackDetail'
+import { Alerts } from '@/pages/Alerts'
+import { Pharmacy } from '@/pages/Pharmacy'
 import { cn } from '@/lib/utils'
 
 const NAV_ITEMS = [
   { to: '/', icon: LayoutGrid, label: 'Home', exact: true },
   { to: '/list', icon: List, label: 'List', exact: false },
   { to: '/deals', icon: Tag, label: 'Deals', exact: false },
-  { to: '/shopping-plan', icon: CalendarCheck, label: 'Plan', exact: false },
+  { to: '/alerts', icon: Bell, label: 'Alerts', exact: false },
+  { to: '/pharmacy', icon: Pill, label: 'Rx', exact: false },
 ]
 
 function BottomNav() {
@@ -47,7 +50,6 @@ function BottomNav() {
 
 function AppLayout() {
   const location = useLocation()
-  // Hide bottom nav on stack detail page
   const hideNav = location.pathname.startsWith('/stack/')
 
   return (
@@ -59,6 +61,8 @@ function AppLayout() {
           <Route path="/deals" element={<Deals />} />
           <Route path="/shopping-plan" element={<ShoppingPlan />} />
           <Route path="/stack/:itemId" element={<StackDetail />} />
+          <Route path="/alerts" element={<Alerts />} />
+          <Route path="/pharmacy" element={<Pharmacy />} />
         </Routes>
       </main>
       {!hideNav && <BottomNav />}
