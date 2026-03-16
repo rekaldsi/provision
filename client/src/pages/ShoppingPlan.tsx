@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { CalendarCheck, TrendingDown, Zap, Gift } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { CalendarCheck, TrendingDown, Zap, Gift, ShoppingCart } from 'lucide-react'
 import { getShoppingPlan, type ShoppingPlanResponse } from '@/lib/api'
 import { ShoppingPlanList } from '@/components/ShoppingPlanList'
 import { formatPrice } from '@/lib/utils'
@@ -89,6 +90,16 @@ export function ShoppingPlan() {
                 ))}
               </div>
             </div>
+          )}
+
+          {/* Check Out CTA */}
+          {plan.plan.length > 0 && (
+            <Link to="/checkout">
+              <button className="w-full flex items-center justify-center gap-2 py-3.5 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold rounded-xl text-base transition-colors">
+                <ShoppingCart size={18} />
+                Check Out
+              </button>
+            </Link>
           )}
         </>
       ) : null}

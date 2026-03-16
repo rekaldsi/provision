@@ -5,8 +5,55 @@ import { getItems, getStores, calculateStack, type Item, type Store as StoreType
 import { StackBreakdown } from '@/components/StackBreakdown'
 import { StoreBadge } from '@/components/StoreBadge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { formatPrice } from '@/lib/utils'
+
+// Parse size from item name — e.g. "Tide Pods 35ct", "Chicken 3 lb", "Juice 64 oz"
+function parseSizeFromName(name: string): { label: string; oz: number | null } | null {
+  const patterns: Array<{ re: RegExp; unit: string; toOz: ((v: number) => number) | null }> = [
+    { re: /(\d+(?:\.\d+)?)\s*(?:fl\s*)?oz/i, unit: 'oz', toOz: (v) => v },
+    { re: /(\d+(?:\.\d+)?)\s*lb/i, unit: 'lb', toOz: (v) => v * 16 },
+    { re: /(\d+(?:\.\d+)?)\s*kg/i, unit: 'kg', toOz: (v) => v * 35.274 },
+    { re: /(\d+(?:\.\d+)?)\s*g\b/i, unit: 'g', toOz: (v) => v / 28.35 },
+    { re: /(\d+(?:\.\d+)?)\s*(?:ct|count|pk|pack)/i, unit: 'ct', toOz: null },
+    { re: /(\d+(?:\.\d+)?)\s*ml/i, unit: 'ml', toOz: (v) => v / 29.57 },
+    { re: /(\d+(?:\.\d+)?)\s*l(?:iter)?s?\b/i, unit: 'L', toOz: (v) => v * 33.81 },
+  ]
+  for (const { re, unit, toOz } of patterns) {
+    const m = name.match(re)
+    if (m) {
+      const value = parseFloat(m[1])
+      return { label: `${value} ${unit}`, oz: toOz ? toOz(value) : null }
+    }
+  }
+  return null
+}
+
+function computeUnitPrice(price: number, itemName: string): string | null {
+  const sizeInfo = parseSizeFromName(itemName)
+  if (!sizeInfo) return null
+  if (sizeInfo.oz !== null && sizeInfo.oz > 0) {
+    return `$${(price / sizeInfo.oz).toFixed(2)}/oz`
+  }
+  const countMatch = itemName.match(/(\d+)\s*(?:ct|count|pk|pack)/i)
+  if (countMatch) {
+    const count = parseInt(countMatch[1])
+    if (count > 0) return `$${(price / count).toFixed(3)}/ea`
+  }
+  return null
+}
+
+function ItemSizeUnitPrice({ itemName, price }: { itemName: string; price?: number }) {
+  const sizeInfo = parseSizeFromName(itemName)
+  const unitPrice = price != null && price > 0 ? computeUnitPrice(price, itemName) : null
+  if (!sizeInfo && !unitPrice) return null
+  return (
+    <div className="flex items-center gap-2 flex-wrap mt-0.5">
+      {sizeInfo && <span className="text-xs text-provision-dim">{sizeInfo.label}</span>}
+      {unitPrice && <span className="text-xs text-provision-muted">· {unitPrice}</span>}
+    </div>
+  )
+}
 
 export function StackDetail() {
   const { itemId } = useParams<{ itemId: string }>()
@@ -41,7 +88,6 @@ export function StackDetail() {
         // skip
       }
     }
-    // Sort by final price
     results.sort((a, b) => (a.final_price ?? 9999) - (b.final_price ?? 9999))
     setStacks(results)
     setCalculating(false)
@@ -122,6 +168,21 @@ export function StackDetail() {
               <div>
                 <p className="text-xs text-provision-dim uppercase tracking-wider mb-1">Best Stack</p>
                 <StoreBadge name={bestStack.store_name} size="md" />
+                {/* Brand + size + unit price */}
+                <div className="mt-1.5">
+                  {item.brand && (
+                    <p className="text-xs text-provision-dim">{item.brand} · {bestStack.item_name}</p>
+                  )}
+                  <ItemSizeUnitPrice itemName={bestStack.item_name} price={bestStack.final_price} />
+                </div>
+                {bestStack.deal_id && (
+                  <Link
+                    to={`/deal/${bestStack.deal_id}`}
+                    className="inline-flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 mt-1"
+                  >
+                    View Deal →
+                  </Link>
+                )}
               </div>
               <div className="text-right">
                 <p className={
@@ -165,8 +226,19 @@ export function StackDetail() {
             {stacks.map((stack, i) => (
               <Card key={stack.store_id + i} className="hover:border-white/10 transition-colors">
                 <CardContent className="p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <StoreBadge name={stack.store_name} />
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <StoreBadge name={stack.store_name} />
+                      <ItemSizeUnitPrice itemName={stack.item_name} price={stack.final_price} />
+                      {stack.deal_id && (
+                        <Link
+                          to={`/deal/${stack.deal_id}`}
+                          className="inline-flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 mt-0.5"
+                        >
+                          View Deal →
+                        </Link>
+                      )}
+                    </div>
                     <div className="text-right">
                       <p className={
                         'text-base font-bold ' + (

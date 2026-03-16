@@ -56,6 +56,14 @@ body {
   @apply bg-emerald-500/15 text-emerald-400 border border-emerald-500/30;
 }
 
+/* Hide scrollbar utility */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Animated gradient for near-free / free items */
 @keyframes shimmer {
   0% { background-position: -200% 0; }
