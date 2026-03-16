@@ -1,8 +1,9 @@
 import { BrowserRouter as Router, Routes, Route, NavLink, useLocation } from 'react-router-dom'
-import { LayoutGrid, List, Tag, Bell, MoreHorizontal } from 'lucide-react'
+import { LayoutGrid, Tag, Package, Bell, MoreHorizontal } from 'lucide-react'
 import { Dashboard } from '@/pages/Dashboard'
 import { MyList } from '@/pages/MyList'
 import { Deals } from '@/pages/Deals'
+import { DealDetail } from '@/pages/DealDetail'
 import { ShoppingPlan } from '@/pages/ShoppingPlan'
 import { StackDetail } from '@/pages/StackDetail'
 import { Alerts } from '@/pages/Alerts'
@@ -16,14 +17,11 @@ import { cn } from '@/lib/utils'
 
 const NAV_ITEMS = [
   { to: '/', icon: LayoutGrid, label: 'Home', exact: true },
-  { to: '/list', icon: List, label: 'List', exact: false },
   { to: '/deals', icon: Tag, label: 'Deals', exact: false },
+  { to: '/pantry', icon: Package, label: 'Pantry', exact: false },
   { to: '/alerts', icon: Bell, label: 'Alerts', exact: false },
   { to: '/more', icon: MoreHorizontal, label: 'More', exact: false },
 ]
-
-// Pages that use the "More" hub — highlight "More" nav item for all of them
-const MORE_PATHS = ['/more', '/shopping-plan', '/pantry', '/gas', '/amazon', '/donate', '/pharmacy']
 
 function BottomNav() {
   return (
@@ -34,16 +32,14 @@ function BottomNav() {
             key={item.to}
             to={item.to}
             end={item.exact}
-            className={({ isActive }) => {
-              // For "More", also activate for all sub-pages
-              const isMoreActive = item.to === '/more'
-              return cn(
+            className={({ isActive }) =>
+              cn(
                 'flex-1 flex flex-col items-center justify-center py-2.5 gap-1 transition-colors',
                 isActive
                   ? 'text-provision-text'
                   : 'text-provision-muted hover:text-provision-dim'
               )
-            }}
+            }
           >
             {({ isActive }) => (
               <>
@@ -60,7 +56,7 @@ function BottomNav() {
 
 function AppLayout() {
   const location = useLocation()
-  const hideNav = location.pathname.startsWith('/stack/')
+  const hideNav = location.pathname.startsWith('/stack/') || location.pathname.startsWith('/deal/')
 
   return (
     <div className="min-h-screen bg-provision-bg text-provision-text">
@@ -69,6 +65,7 @@ function AppLayout() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/list" element={<MyList />} />
           <Route path="/deals" element={<Deals />} />
+          <Route path="/deal/:id" element={<DealDetail />} />
           <Route path="/shopping-plan" element={<ShoppingPlan />} />
           <Route path="/stack/:itemId" element={<StackDetail />} />
           <Route path="/alerts" element={<Alerts />} />

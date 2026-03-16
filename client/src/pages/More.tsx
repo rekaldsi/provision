@@ -1,33 +1,42 @@
 import { Link } from 'react-router-dom'
-import { Package, Fuel, ShoppingBag, CalendarCheck, Heart, Map } from 'lucide-react'
+import { List, CalendarCheck, Fuel, ShoppingBag, Heart, Stethoscope } from 'lucide-react'
 
 const HUB_ITEMS = [
   {
-    to: '/shopping-plan',
-    icon: CalendarCheck,
-    label: 'Shopping Plan',
-    desc: 'Optimized weekly run',
+    to: '/list',
+    icon: List,
+    label: 'My List',
+    desc: 'Shopping list + deal tracking',
     color: 'text-provision-savings',
     bg: 'bg-provision-savings/10',
     border: 'border-provision-savings/30',
   },
   {
-    to: '/pantry',
-    icon: Package,
-    label: 'Pantry',
-    desc: 'Track your inventory',
-    color: 'text-amber-400',
-    bg: 'bg-amber-900/20',
-    border: 'border-amber-700/30',
+    to: '/shopping-plan',
+    icon: CalendarCheck,
+    label: 'Shopping Plan',
+    desc: 'Optimized weekly run',
+    color: 'text-blue-400',
+    bg: 'bg-blue-900/20',
+    border: 'border-blue-700/30',
   },
   {
     to: '/gas',
     icon: Fuel,
     label: 'Gas',
     desc: "Sam's · Costco · Fuel Rewards",
-    color: 'text-blue-400',
-    bg: 'bg-blue-900/20',
-    border: 'border-blue-700/30',
+    color: 'text-yellow-400',
+    bg: 'bg-yellow-900/20',
+    border: 'border-yellow-700/30',
+  },
+  {
+    to: '/pharmacy',
+    icon: Stethoscope,
+    label: 'Pharmacy',
+    desc: 'Rx prices · $4 generics',
+    color: 'text-cyan-400',
+    bg: 'bg-cyan-900/20',
+    border: 'border-cyan-700/30',
   },
   {
     to: '/amazon',
@@ -54,7 +63,7 @@ export function More() {
     <div className="space-y-4 animate-fade-in">
       <div>
         <h1 className="text-xl font-bold text-provision-text">More</h1>
-        <p className="text-provision-dim text-sm">Gas · Pantry · Amazon · Donate</p>
+        <p className="text-provision-dim text-sm">My List · Shopping Plan · Gas · Pharmacy · Amazon · Donate</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
