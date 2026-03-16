@@ -15,7 +15,6 @@ import { Donate } from '@/pages/Donate'
 import { More } from '@/pages/More'
 import { Checkout } from '@/pages/Checkout'
 import { Wallet } from '@/pages/Wallet'
-import { DealDetail } from '@/pages/DealDetail'
 import { cn } from '@/lib/utils'
 
 const NAV_ITEMS = [

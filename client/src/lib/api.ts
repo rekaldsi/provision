@@ -35,6 +35,14 @@ export const getDeals = (params?: { store_id?: string; category?: string; search
 }
 export const matchDeals = () => request<{ matches: DealMatch[] }>('/deals/match')
 
+export const addToListFromDeal = (deal: Deal) =>
+  createItem({
+    name: deal.item_name,
+    brand: deal.item_brand,
+    category: deal.category,
+    quantity: 1,
+  })
+
 // Stack
 export const calculateStack = (item_name: string, store_id: string, item_id?: string) =>
   request<StackResult>('/stack/calculate', {
