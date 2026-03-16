@@ -21,10 +21,13 @@ TARGET_MERCHANTS = [
     "jewel-osco", "jewel", "mariano's", "marianos", "aldi",
     "tony's fresh market", "tony's finer foods", "tony",
     "h mart", "hmart", "seafood city",
-    "target", "walmart", "sam's club", "costco",
+    "target", "walmart", "sam's club", "sams club", "costco",
     "dollar general", "family dollar", "dollar tree",
     "home depot", "menards", "lowe's"
 ]
+
+# Stores that require membership — shown in UI
+MEMBERSHIP_STORES = {"costco", "sam's club", "sams club"}
 
 # Search terms covering all categories in PROVISION
 SEARCH_QUERIES = [
@@ -90,16 +93,28 @@ def get_store_id_map():
 
 def match_store_id(merchant_name, store_map):
     name = (merchant_name or "").lower()
-    # Exact
+    # Normalize apostrophes (sams club → sam's club)
+    name_norm = name.replace("'", "").replace("'", "")
+    # Exact match
     if name in store_map:
         return store_map[name]
-    # Partial
+    # Exact normalized match
+    norm_map = {k.replace("'", "").replace("'", ""): v for k, v in store_map.items()}
+    if name_norm in norm_map:
+        return norm_map[name_norm]
+    # Partial match
     for key, sid in store_map.items():
         if key in name or name in key:
             return sid
     return None
 
-def normalize(item, store_id):
+
+def target_circle_url(item_name: str) -> str:
+    """Generate a Target.com search URL to find Target Circle offers for an item."""
+    encoded = requests.utils.quote(item_name)
+    return f"https://www.target.com/s?searchTerm={encoded}"
+
+def normalize(item, store_id, merchant_name=""):
     name = (item.get("name") or "").strip()
     if not name:
         return None
@@ -138,6 +153,13 @@ def normalize(item, store_id):
     else:
         category = "general"
 
+    # Flipp item ID for dedup
+    flipp_id = str(item.get("flyer_item_id") or item.get("id") or "")
+
+    # Target Circle URL for Target deals
+    merchant_lower = (merchant_name or "").lower()
+    tc_url = target_circle_url(name) if "target" in merchant_lower else None
+
     return {
         "item_name": name[:200],
         "item_brand": None,
@@ -151,6 +173,8 @@ def normalize(item, store_id):
         "valid_from": valid_from,
         "valid_until": valid_until or None,
         "category": category,
+        "flipp_item_id": flipp_id or None,
+        "target_circle_url": tc_url,
     }
 
 def upsert_deals(deals):
@@ -209,7 +233,7 @@ def run():
             if not store_id:
                 continue
 
-            deal = normalize(item, store_id)
+            deal = normalize(item, store_id, merchant_name=item.get("merchant_name", ""))
             if deal:
                 all_deals.append(deal)
                 added += 1

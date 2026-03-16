@@ -164,3 +164,85 @@ INSERT INTO items (name, brand, category, quantity, unit) VALUES
   ('Cheerios', 'General Mills', 'food', 1, '18oz'),
   ('Bounty Paper Towels', 'Bounty', 'household', 1, '8 rolls')
 ON CONFLICT DO NOTHING;
+
+-- ============================================================
+-- Phase 2 Schema Additions
+-- ============================================================
+
+-- Pharmacy / Rx prices
+CREATE TABLE IF NOT EXISTS rx_prices (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  drug_name TEXT NOT NULL,
+  drug_generic TEXT,
+  ndc TEXT,
+  quantity INTEGER DEFAULT 30,
+  dosage TEXT,
+  form TEXT, -- tablet, capsule, liquid, etc.
+  source TEXT NOT NULL, -- goodrx, costplus, walmart, walgreens, etc.
+  price NUMERIC NOT NULL,
+  pharmacy_name TEXT,
+  store_id UUID REFERENCES stores(id),
+  coupon_url TEXT,
+  is_generic BOOLEAN DEFAULT FALSE,
+  household_member TEXT, -- who it's for (encrypted in prod)
+  last_updated TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Family Rx list (local-storage based on client, but server-side optional)
+CREATE TABLE IF NOT EXISTS rx_list (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  household_id TEXT DEFAULT 'default',
+  drug_name TEXT NOT NULL,
+  drug_generic TEXT,
+  dosage TEXT,
+  quantity INTEGER DEFAULT 30,
+  form TEXT,
+  member_name TEXT, -- optional, stored locally
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Deals extended with quality/categorization fields
+ALTER TABLE deals ADD COLUMN IF NOT EXISTS quality_score INTEGER DEFAULT 5; -- 1-10, higher = better quality
+ALTER TABLE deals ADD COLUMN IF NOT EXISTS is_store_brand BOOLEAN DEFAULT FALSE;
+ALTER TABLE deals ADD COLUMN IF NOT EXISTS national_brand_compare JSONB; -- {brand, price, savings_vs_national}
+ALTER TABLE deals ADD COLUMN IF NOT EXISTS processed_score INTEGER DEFAULT 5; -- 1=ultra-processed, 10=whole food
+ALTER TABLE deals ADD COLUMN IF NOT EXISTS flipp_item_id TEXT; -- for dedup
+ALTER TABLE deals ADD COLUMN IF NOT EXISTS target_circle_url TEXT; -- Target Circle deep link
+
+-- Rebates table (M002/S02)
+CREATE TABLE IF NOT EXISTS rebates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  item_name TEXT NOT NULL,
+  item_brand TEXT,
+  rebate_amount NUMERIC NOT NULL,
+  source TEXT NOT NULL, -- ibotta, fetch, checkout51
+  source_url TEXT,
+  deep_link TEXT,
+  valid_until DATE,
+  min_quantity INTEGER DEFAULT 1,
+  categories TEXT[],
+  upc TEXT[],
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Deals dedup index
+CREATE UNIQUE INDEX IF NOT EXISTS idx_deals_flipp_item_id ON deals(flipp_item_id) WHERE flipp_item_id IS NOT NULL;
+
+-- Rx indexes
+CREATE INDEX IF NOT EXISTS idx_rx_prices_drug ON rx_prices(drug_name);
+CREATE INDEX IF NOT EXISTS idx_rx_list_household ON rx_list(household_id);
+CREATE INDEX IF NOT EXISTS idx_rebates_item ON rebates(item_name);
+
+-- Additional stores for Phase 2 coverage
+INSERT INTO stores (name, chain, type, city, state, zip, coupon_stacking_policy) VALUES
+  ('GoodRx', 'GoodRx', 'pharmacy', 'Chicago', 'IL', '60601', '{"notes": "Coupon/price comparison service"}'),
+  ('Cost Plus Drugs', 'Cost Plus Drugs', 'pharmacy', 'Online', 'IL', '00000', '{"notes": "Mark Cuban pharmacy — direct cost pricing"}'),
+  ('Walmart Pharmacy', 'Walmart', 'pharmacy', 'Chicago', 'IL', '60639', '{"generic_4_list": true, "generic_10_list": true}'),
+  ('Costco Pharmacy', 'Costco', 'pharmacy', 'Bridgeview', 'IL', '60455', '{"membership_not_required_for_rx": true}'),
+  ('Sam''s Club Pharmacy', 'Walmart', 'pharmacy', 'Melrose Park', 'IL', '60160', '{"membership_not_required_for_rx": true}'),
+  ('Walgreens', 'Walgreens', 'pharmacy', 'Chicago', 'IL', '60614', '{"store_plus_manufacturer": true, "rewards": "myWalgreens"}'),
+  ('CVS', 'CVS', 'pharmacy', 'Chicago', 'IL', '60618', '{"store_plus_manufacturer": true, "rewards": "ExtraBucks"}'),
+  ('Jewel-Osco Pharmacy', 'Kroger', 'pharmacy', 'Chicago', 'IL', '60614', '{"kroger_loyalty": true}')
+ON CONFLICT DO NOTHING;

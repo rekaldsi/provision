@@ -87,6 +87,7 @@ export interface Deal {
   discount_pct?: number
   source?: string
   source_url?: string
+  target_circle_url?: string
   valid_from?: string
   valid_until?: string
   category?: string

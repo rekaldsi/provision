@@ -6,6 +6,7 @@ const CHAIN_COLORS: Record<string, string> = {
   Walmart: 'bg-blue-800/40 text-blue-200 border-blue-700/50',
   Aldi: 'bg-sky-900/40 text-sky-300 border-sky-800/50',
   Costco: 'bg-indigo-900/40 text-indigo-300 border-indigo-800/50',
+  "Sam's Club": 'bg-teal-900/40 text-teal-300 border-teal-800/50',
   'Dollar General': 'bg-violet-900/40 text-violet-300 border-violet-800/50',
   'Dollar Tree': 'bg-purple-900/40 text-purple-300 border-purple-800/50',
   'Home Depot': 'bg-orange-900/40 text-orange-300 border-orange-800/50',

@@ -30,6 +30,9 @@ export function DealCard({ deal, className }: DealCardProps) {
               {deal.store_name && (
                 <StoreBadge name={deal.store_name} chain={deal.store_chain} />
               )}
+              {deal.store_type === 'warehouse' && (
+                <span className="text-xs text-teal-500 font-medium">Members</span>
+              )}
               {deal.category && (
                 <span className="text-xs text-provision-dim">{deal.category}</span>
               )}
@@ -73,17 +76,30 @@ export function DealCard({ deal, className }: DealCardProps) {
             )}
           </div>
 
-          {deal.source_url && (
-            <a
-              href={deal.source_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-xs text-provision-dim hover:text-provision-text transition-colors"
-            >
-              {deal.source}
-              <ExternalLink size={10} />
-            </a>
-          )}
+          <div className="flex items-center gap-2">
+            {deal.target_circle_url && (
+              <a
+                href={deal.target_circle_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 transition-colors font-medium"
+              >
+                Circle
+                <ExternalLink size={10} />
+              </a>
+            )}
+            {deal.source_url && (
+              <a
+                href={deal.source_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-xs text-provision-dim hover:text-provision-text transition-colors"
+              >
+                {deal.source}
+                <ExternalLink size={10} />
+              </a>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
