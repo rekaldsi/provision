@@ -110,6 +110,9 @@ export interface Deal {
   valid_from?: string
   valid_until?: string
   category?: string
+  quality_score?: number
+  is_store_brand?: boolean
+  is_national_brand?: boolean
   created_at: string
 }
 

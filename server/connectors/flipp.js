@@ -9,6 +9,7 @@
 
 const axios = require('axios');
 const { createClient } = require('@supabase/supabase-js');
+const { detectStoreBrand, detectNationalBrand } = require('../services/dealCategorizer');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -178,7 +179,8 @@ function normalizeItem(item, storeId, resolvedStoreName) {
     category,
     quality_score: scoreQuality(name, category),
     processed_score: scoreProcessed(name),
-    is_store_brand: false,
+    is_store_brand: detectStoreBrand(name, resolvedStoreName),
+    is_national_brand: detectNationalBrand(name),
     flipp_item_id: String(item.flyer_item_id || item.id || ''),
     target_circle_url: targetCircleUrl,
   };

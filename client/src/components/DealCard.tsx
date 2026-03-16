@@ -43,6 +43,9 @@ export function DealCard({ deal, className }: DealCardProps) {
               {!deal.stores?.name && deal.store_name && (
                 <StoreBadge name={deal.store_name} chain={deal.store_chain} />
               )}
+              {deal.is_store_brand && (
+                <span className="text-xs text-violet-400 font-medium">Store Brand</span>
+              )}
               {deal.category && (
                 <span className="text-xs text-provision-dim">{deal.category.replace('.', ' › ')}</span>
               )}
