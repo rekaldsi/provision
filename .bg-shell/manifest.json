@@ -1,1 +1,14 @@
-[]
+[
+  {
+    "id": "6eecd41d",
+    "label": "provision-api",
+    "command": "cd /Users/jerrycieslik/projects/provision && node server/index.js",
+    "cwd": "/Users/jerrycieslik/projects/provision",
+    "startedAt": 1773638643410,
+    "processType": "server",
+    "group": null,
+    "readyPattern": null,
+    "readyPort": 3001,
+    "pid": 86070
+  }
+]
