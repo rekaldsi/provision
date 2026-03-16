@@ -246,3 +246,94 @@ INSERT INTO stores (name, chain, type, city, state, zip, coupon_stacking_policy)
   ('CVS', 'CVS', 'pharmacy', 'Chicago', 'IL', '60618', '{"store_plus_manufacturer": true, "rewards": "ExtraBucks"}'),
   ('Jewel-Osco Pharmacy', 'Kroger', 'pharmacy', 'Chicago', 'IL', '60614', '{"kroger_loyalty": true}')
 ON CONFLICT DO NOTHING;
+
+-- ============================================================
+-- Phase 3-4 Schema: Pantry Inventory + Gas + Amazon
+-- ============================================================
+
+-- Pantry Inventory
+CREATE TABLE IF NOT EXISTS pantry_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  household_id TEXT DEFAULT 'default',
+  item_name TEXT NOT NULL,
+  item_brand TEXT,
+  category TEXT,
+  quantity NUMERIC DEFAULT 1,
+  unit TEXT,
+  location TEXT DEFAULT 'pantry', -- pantry, freezer, long_term, fridge, garage
+  expiry_date DATE,
+  purchase_date DATE DEFAULT CURRENT_DATE,
+  purchase_price NUMERIC,
+  store_name TEXT,
+  barcode TEXT,
+  notes TEXT,
+  reorder_threshold NUMERIC, -- alert when qty drops below this
+  is_long_term_storage BOOLEAN DEFAULT FALSE,
+  seal_date DATE, -- for mylar bags / sealed buckets
+  shelf_life_months INTEGER, -- projected shelf life
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Donation log
+CREATE TABLE IF NOT EXISTS donations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  household_id TEXT DEFAULT 'default',
+  item_name TEXT NOT NULL,
+  quantity NUMERIC NOT NULL,
+  unit TEXT,
+  retail_value NUMERIC,
+  pantry_name TEXT,
+  donation_date DATE DEFAULT CURRENT_DATE,
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Gas prices log
+CREATE TABLE IF NOT EXISTS gas_prices (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  station_name TEXT,
+  station_type TEXT, -- sam's, costco, bp, amoco, etc.
+  zip TEXT,
+  regular_price NUMERIC,
+  midgrade_price NUMERIC,
+  premium_price NUMERIC,
+  diesel_price NUMERIC,
+  source TEXT DEFAULT 'manual',
+  recorded_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Amazon watchlist
+CREATE TABLE IF NOT EXISTS amazon_watchlist (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  household_id TEXT DEFAULT 'default',
+  asin TEXT NOT NULL,
+  item_name TEXT NOT NULL,
+  target_price NUMERIC,
+  current_price NUMERIC,
+  all_time_low NUMERIC,
+  camel_url TEXT,
+  amazon_url TEXT,
+  category TEXT,
+  is_subscribe_save BOOLEAN DEFAULT FALSE,
+  notes TEXT,
+  last_checked TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Jewel Fuel Rewards tracker
+CREATE TABLE IF NOT EXISTS fuel_rewards (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  household_id TEXT DEFAULT 'default',
+  program TEXT DEFAULT 'jewel', -- jewel, kroger, samsplus
+  balance_points INTEGER DEFAULT 0,
+  expires_date DATE,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Pantry indexes
+CREATE INDEX IF NOT EXISTS idx_pantry_household ON pantry_items(household_id);
+CREATE INDEX IF NOT EXISTS idx_pantry_expiry ON pantry_items(expiry_date);
+CREATE INDEX IF NOT EXISTS idx_pantry_location ON pantry_items(location);
+CREATE INDEX IF NOT EXISTS idx_amazon_watchlist_household ON amazon_watchlist(household_id);
+CREATE INDEX IF NOT EXISTS idx_donations_household ON donations(household_id);

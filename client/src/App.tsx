@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, NavLink, useLocation } from 'react-router-dom'
-import { LayoutGrid, List, Tag, CalendarCheck, Bell, Pill } from 'lucide-react'
+import { LayoutGrid, List, Tag, Bell, MoreHorizontal } from 'lucide-react'
 import { Dashboard } from '@/pages/Dashboard'
 import { MyList } from '@/pages/MyList'
 import { Deals } from '@/pages/Deals'
@@ -7,6 +7,11 @@ import { ShoppingPlan } from '@/pages/ShoppingPlan'
 import { StackDetail } from '@/pages/StackDetail'
 import { Alerts } from '@/pages/Alerts'
 import { Pharmacy } from '@/pages/Pharmacy'
+import { Pantry } from '@/pages/Pantry'
+import { Gas } from '@/pages/Gas'
+import { Amazon } from '@/pages/Amazon'
+import { Donate } from '@/pages/Donate'
+import { More } from '@/pages/More'
 import { cn } from '@/lib/utils'
 
 const NAV_ITEMS = [
@@ -14,8 +19,11 @@ const NAV_ITEMS = [
   { to: '/list', icon: List, label: 'List', exact: false },
   { to: '/deals', icon: Tag, label: 'Deals', exact: false },
   { to: '/alerts', icon: Bell, label: 'Alerts', exact: false },
-  { to: '/pharmacy', icon: Pill, label: 'Rx', exact: false },
+  { to: '/more', icon: MoreHorizontal, label: 'More', exact: false },
 ]
+
+// Pages that use the "More" hub — highlight "More" nav item for all of them
+const MORE_PATHS = ['/more', '/shopping-plan', '/pantry', '/gas', '/amazon', '/donate', '/pharmacy']
 
 function BottomNav() {
   return (
@@ -26,14 +34,16 @@ function BottomNav() {
             key={item.to}
             to={item.to}
             end={item.exact}
-            className={({ isActive }) =>
-              cn(
+            className={({ isActive }) => {
+              // For "More", also activate for all sub-pages
+              const isMoreActive = item.to === '/more'
+              return cn(
                 'flex-1 flex flex-col items-center justify-center py-2.5 gap-1 transition-colors',
                 isActive
                   ? 'text-provision-text'
                   : 'text-provision-muted hover:text-provision-dim'
               )
-            }
+            }}
           >
             {({ isActive }) => (
               <>
@@ -63,6 +73,11 @@ function AppLayout() {
           <Route path="/stack/:itemId" element={<StackDetail />} />
           <Route path="/alerts" element={<Alerts />} />
           <Route path="/pharmacy" element={<Pharmacy />} />
+          <Route path="/pantry" element={<Pantry />} />
+          <Route path="/gas" element={<Gas />} />
+          <Route path="/amazon" element={<Amazon />} />
+          <Route path="/donate" element={<Donate />} />
+          <Route path="/more" element={<More />} />
         </Routes>
       </main>
       {!hideNav && <BottomNav />}

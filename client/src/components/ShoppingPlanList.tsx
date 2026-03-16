@@ -115,15 +115,40 @@ function TripItem({ item }: { item: ShoppingPlanTrip['items'][number] }) {
         </div>
       </button>
 
-      {expanded && item.stack_breakdown.length > 0 && (
-        <div className="mt-2 ml-3 pl-3 border-l border-provision-border/50">
-          <StackBreakdown
-            breakdown={item.stack_breakdown}
-            finalPrice={item.final_price}
-            isFree={item.is_free}
-            isProfit={item.is_profit}
-            isNearFree={item.is_near_free}
-          />
+      {expanded && (
+        <div className="mt-2 ml-3 pl-3 border-l border-provision-border/50 space-y-1.5">
+          {/* Stack summary */}
+          {(item as any).stack_summary && (
+            <p className="text-xs text-provision-dim font-mono">{(item as any).stack_summary}</p>
+          )}
+          {/* Coupon note */}
+          {(item as any).coupon_needed && (
+            <p className="text-xs text-yellow-400">✂️ {(item as any).coupon_needed}</p>
+          )}
+          {/* Rebate note */}
+          {(item as any).rebate_note && (
+            <p className="text-xs text-provision-savings">💰 {(item as any).rebate_note}</p>
+          )}
+          {/* Target Circle */}
+          {(item as any).target_circle_url && (
+            <a
+              href={(item as any).target_circle_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-red-400 hover:text-red-300"
+            >
+              🎯 Clip Target Circle offer
+            </a>
+          )}
+          {item.stack_breakdown && item.stack_breakdown.length > 0 && (
+            <StackBreakdown
+              breakdown={item.stack_breakdown}
+              finalPrice={item.final_price}
+              isFree={item.is_free}
+              isProfit={item.is_profit}
+              isNearFree={item.is_near_free}
+            />
+          )}
         </div>
       )}
     </div>

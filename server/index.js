@@ -6,6 +6,7 @@ const { getRxPrices, WALMART_GENERICS } = require('./connectors/pharmacy');
 const { scrapeAll: flippScrapeAll } = require('./connectors/flipp');
 const { enrichDeal, categorizeDeal, qualityScore } = require('./services/dealCategorizer');
 const { classifyStack, classifyDeal, TIERS } = require('./services/alertSystem');
+const { getGasIntelligence } = require('./connectors/gas');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -623,6 +624,36 @@ app.get('/api/rebates', async (req, res) => {
   }
 });
 
+app.post('/api/rebates', async (req, res) => {
+  try {
+    const { item_name, item_brand, rebate_amount, source, source_url, deep_link, valid_until } = req.body;
+    if (!item_name || !rebate_amount || !source) {
+      return res.status(400).json({ error: 'item_name, rebate_amount, and source are required' });
+    }
+    const { data, error } = await supabase
+      .from('rebates')
+      .insert([{ item_name, item_brand, rebate_amount: parseFloat(rebate_amount), source, source_url, deep_link, valid_until }])
+      .select()
+      .single();
+    if (error) throw error;
+    res.status(201).json({ rebate: data });
+  } catch (err) {
+    console.error('POST /api/rebates error:', err);
+    res.status(500).json({ error: 'Failed to add rebate' });
+  }
+});
+
+app.delete('/api/rebates/:id', async (req, res) => {
+  try {
+    const { error } = await supabase.from('rebates').delete().eq('id', req.params.id);
+    if (error) throw error;
+    res.json({ deleted: true });
+  } catch (err) {
+    console.error('DELETE /api/rebates error:', err);
+    res.status(500).json({ error: 'Failed to delete rebate' });
+  }
+});
+
 // ============================================================
 // SCRAPER TRIGGER (manual or cron-accessible)
 // ============================================================
@@ -677,6 +708,216 @@ app.get('/api/stats', async (req, res) => {
   } catch (err) {
     console.error('GET /api/stats error:', err);
     res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
+// ============================================================
+// PANTRY INVENTORY (Phase 3)
+// ============================================================
+
+app.get('/api/pantry', async (req, res) => {
+  try {
+    const { household_id = 'default' } = req.query;
+    const { data, error } = await supabase
+      .from('pantry_items')
+      .select('*')
+      .eq('household_id', household_id)
+      .order('expiry_date', { ascending: true, nullsFirst: false });
+    if (error) throw error;
+    res.json({ items: data || [] });
+  } catch (err) {
+    console.error('GET /api/pantry error:', err);
+    res.status(500).json({ error: 'Failed to fetch pantry' });
+  }
+});
+
+app.post('/api/pantry', async (req, res) => {
+  try {
+    const {
+      item_name, item_brand, category, quantity = 1, unit,
+      location = 'pantry', expiry_date, purchase_date, purchase_price,
+      store_name, notes, reorder_threshold, is_long_term_storage = false,
+      shelf_life_months, household_id = 'default'
+    } = req.body;
+    if (!item_name) return res.status(400).json({ error: 'item_name required' });
+
+    const { data, error } = await supabase
+      .from('pantry_items')
+      .insert([{
+        item_name, item_brand, category, quantity, unit, location,
+        expiry_date: expiry_date || null,
+        purchase_date: purchase_date || null,
+        purchase_price: purchase_price || null,
+        store_name, notes, reorder_threshold,
+        is_long_term_storage, shelf_life_months, household_id
+      }])
+      .select()
+      .single();
+    if (error) throw error;
+    res.status(201).json({ item: data });
+  } catch (err) {
+    console.error('POST /api/pantry error:', err);
+    res.status(500).json({ error: 'Failed to add pantry item' });
+  }
+});
+
+app.put('/api/pantry/:id', async (req, res) => {
+  try {
+    const updates = { ...req.body, updated_at: new Date().toISOString() };
+    delete updates.id;
+    const { data, error } = await supabase
+      .from('pantry_items')
+      .update(updates)
+      .eq('id', req.params.id)
+      .select()
+      .single();
+    if (error) throw error;
+    res.json({ item: data });
+  } catch (err) {
+    console.error('PUT /api/pantry/:id error:', err);
+    res.status(500).json({ error: 'Failed to update pantry item' });
+  }
+});
+
+app.delete('/api/pantry/:id', async (req, res) => {
+  try {
+    const { error } = await supabase.from('pantry_items').delete().eq('id', req.params.id);
+    if (error) throw error;
+    res.json({ deleted: true });
+  } catch (err) {
+    console.error('DELETE /api/pantry/:id error:', err);
+    res.status(500).json({ error: 'Failed to delete pantry item' });
+  }
+});
+
+// ============================================================
+// GAS INTELLIGENCE (Phase 5)
+// ============================================================
+
+app.get('/api/gas', async (req, res) => {
+  try {
+    const { zip = '60646', fuel_points = 0 } = req.query;
+    const result = await getGasIntelligence(zip, parseInt(fuel_points) || 0);
+    res.json(result);
+  } catch (err) {
+    console.error('GET /api/gas error:', err);
+    res.status(500).json({ error: 'Failed to fetch gas intelligence' });
+  }
+});
+
+// Fuel rewards CRUD
+app.get('/api/fuel-rewards', async (req, res) => {
+  try {
+    const { household_id = 'default' } = req.query;
+    const { data, error } = await supabase
+      .from('fuel_rewards')
+      .select('*')
+      .eq('household_id', household_id)
+      .order('updated_at', { ascending: false });
+    if (error) throw error;
+    res.json({ rewards: data || [] });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch fuel rewards' });
+  }
+});
+
+app.post('/api/fuel-rewards', async (req, res) => {
+  try {
+    const { program = 'jewel', balance_points, expires_date, household_id = 'default' } = req.body;
+    // Upsert — one record per program per household
+    const { data, error } = await supabase
+      .from('fuel_rewards')
+      .upsert({ program, balance_points, expires_date, household_id, updated_at: new Date().toISOString() }, { onConflict: 'household_id,program' })
+      .select()
+      .single();
+    if (error) throw error;
+    res.json({ reward: data });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to save fuel rewards' });
+  }
+});
+
+// ============================================================
+// AMAZON WATCHLIST (Phase 6)
+// ============================================================
+
+app.get('/api/amazon-watchlist', async (req, res) => {
+  try {
+    const { household_id = 'default' } = req.query;
+    const { data, error } = await supabase
+      .from('amazon_watchlist')
+      .select('*')
+      .eq('household_id', household_id)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    res.json({ items: data || [] });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch Amazon watchlist' });
+  }
+});
+
+app.post('/api/amazon-watchlist', async (req, res) => {
+  try {
+    const { asin, item_name, target_price, category, notes, is_subscribe_save = false, household_id = 'default' } = req.body;
+    if (!item_name) return res.status(400).json({ error: 'item_name required' });
+
+    const amazonUrl = asin ? `https://www.amazon.com/dp/${asin}` : null;
+    const camelUrl = asin ? `https://camelcamelcamel.com/product/${asin}` : null;
+
+    const { data, error } = await supabase
+      .from('amazon_watchlist')
+      .insert([{ asin, item_name, target_price, category, notes, is_subscribe_save, household_id, amazon_url: amazonUrl, camel_url: camelUrl }])
+      .select()
+      .single();
+    if (error) throw error;
+    res.status(201).json({ item: data });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to add to watchlist' });
+  }
+});
+
+app.delete('/api/amazon-watchlist/:id', async (req, res) => {
+  try {
+    const { error } = await supabase.from('amazon_watchlist').delete().eq('id', req.params.id);
+    if (error) throw error;
+    res.json({ deleted: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete watchlist item' });
+  }
+});
+
+// ============================================================
+// DONATIONS (Phase 4)
+// ============================================================
+
+app.get('/api/donations', async (req, res) => {
+  try {
+    const { household_id = 'default' } = req.query;
+    const { data, error } = await supabase
+      .from('donations')
+      .select('*')
+      .eq('household_id', household_id)
+      .order('donation_date', { ascending: false });
+    if (error) throw error;
+    res.json({ donations: data || [] });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch donations' });
+  }
+});
+
+app.post('/api/donations', async (req, res) => {
+  try {
+    const { item_name, quantity, unit, retail_value, pantry_name, donation_date, notes, household_id = 'default' } = req.body;
+    if (!item_name || !quantity) return res.status(400).json({ error: 'item_name and quantity required' });
+    const { data, error } = await supabase
+      .from('donations')
+      .insert([{ item_name, quantity, unit, retail_value, pantry_name, donation_date, notes, household_id }])
+      .select()
+      .single();
+    if (error) throw error;
+    res.status(201).json({ donation: data });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to log donation' });
   }
 });
 
