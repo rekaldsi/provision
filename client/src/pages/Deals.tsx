@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Search, Tag, Leaf, Zap, Star } from 'lucide-react'
+import { useEffect, useState, useMemo } from 'react'
+import { Search, Tag, Leaf, Zap } from 'lucide-react'
 import { getDeals, getStores, type Deal, type Store } from '@/lib/api'
 import { DealCard } from '@/components/DealCard'
 
@@ -37,9 +37,11 @@ export function Deals() {
   const [qualityOnly, setQualityOnly] = useState(false)
   const [hotOnly, setHotOnly] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [activeStorePill, setActiveStorePill] = useState('All')
 
   const load = async () => {
     setLoading(true)
+    setActiveStorePill('All')
     try {
       const params: Record<string, string> = {}
       if (storeFilter !== 'all') params.store_id = storeFilter
@@ -64,13 +66,45 @@ export function Deals() {
 
   useEffect(() => { load() }, [storeFilter, categoryFilter, qualityOnly, hotOnly])
 
+  // Unique store names from loaded deals (for client-side pill filter)
+  const storeNames = useMemo(() => {
+    const names = deals
+      .map(d => d.store_name || d.stores?.name)
+      .filter((n): n is string => Boolean(n))
+    return [...new Set(names)].sort()
+  }, [deals])
+
+  // Client-side filter by active pill
+  const filteredDeals = activeStorePill === 'All'
+    ? deals
+    : deals.filter(d => (d.store_name || d.stores?.name) === activeStorePill)
+
   return (
     <div className="space-y-4 animate-fade-in">
       {/* Header */}
       <div>
         <h1 className="text-lg font-bold text-provision-text">Deals</h1>
-        <p className="text-xs text-provision-dim">{loading ? '...' : `${deals.length} active deals`}</p>
+        <p className="text-xs text-provision-dim">{loading ? '...' : `${filteredDeals.length} active deals`}</p>
       </div>
+
+      {/* Store pills — client-side filter, derives from live deals */}
+      {!loading && storeNames.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 py-1">
+          {['All', ...storeNames].map(name => (
+            <button
+              key={name}
+              onClick={() => setActiveStorePill(name)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 transition-colors border ${
+                activeStorePill === name
+                  ? 'bg-emerald-500 border-emerald-500 text-white'
+                  : 'border-emerald-500/40 text-emerald-400 bg-transparent hover:border-emerald-500'
+              }`}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Search */}
       <form onSubmit={e => { e.preventDefault(); load() }} className="relative">
@@ -142,13 +176,13 @@ export function Deals() {
             <div key={i} className="h-20 rounded-lg bg-provision-surface animate-pulse" />
           ))}
         </div>
-      ) : deals.length === 0 ? (
+      ) : filteredDeals.length === 0 ? (
         <div className="text-center py-12 border border-provision-border rounded-lg">
           <Tag size={32} className="mx-auto mb-3 text-provision-muted" />
           <p className="text-sm text-provision-dim">No deals found</p>
-          {(search || storeFilter !== 'all' || categoryFilter !== 'all' || qualityOnly || hotOnly) && (
+          {(search || storeFilter !== 'all' || categoryFilter !== 'all' || qualityOnly || hotOnly || activeStorePill !== 'All') && (
             <button
-              onClick={() => { setSearch(''); setStoreFilter('all'); setCategoryFilter('all'); setQualityOnly(false); setHotOnly(false) }}
+              onClick={() => { setSearch(''); setStoreFilter('all'); setCategoryFilter('all'); setQualityOnly(false); setHotOnly(false); setActiveStorePill('All') }}
               className="mt-2 text-xs text-provision-dim hover:text-provision-text"
             >
               Clear filters
@@ -157,7 +191,7 @@ export function Deals() {
         </div>
       ) : (
         <div className="space-y-2">
-          {deals.map((deal) => (
+          {filteredDeals.map((deal) => (
             <DealCard key={deal.id} deal={deal} />
           ))}
         </div>

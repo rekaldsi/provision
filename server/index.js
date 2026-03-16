@@ -159,6 +159,21 @@ app.get('/api/deals', async (req, res) => {
       deals = deals.filter(d => !isJunkFood(d.item_name));
     }
 
+    // Enrich with coupon_type and coupon_deep_link (computed at query time)
+    const KROGER_FAMILY = ['jewel', 'mariano', "pick 'n save", 'kroger', 'fred meyer', 'king soopers', 'ralphs'];
+    deals = deals.map(d => {
+      const storeName = (d.stores?.name || d.store_name || '').toLowerCase();
+      const coupon_type = (d.item_name || '').toLowerCase().includes('final price with card')
+        ? 'loyalty_card' : 'store_sale';
+      let coupon_deep_link = null;
+      if (KROGER_FAMILY.some(k => storeName.includes(k))) {
+        coupon_deep_link = 'https://www.kroger.com/savings/cl/promotions/';
+      } else if (storeName.includes('target')) {
+        coupon_deep_link = d.target_circle_url || null;
+      }
+      return { ...d, coupon_type, coupon_deep_link };
+    });
+
     res.json({ deals, total: deals.length });
   } catch (err) {
     console.error('GET /api/deals error:', err);
@@ -221,6 +236,36 @@ app.get('/api/deals/hot', async (req, res) => {
   } catch (err) {
     console.error('GET /api/deals/hot error:', err);
     res.status(500).json({ error: 'Failed to fetch hot deals' });
+  }
+});
+
+// Single deal by ID
+app.get('/api/deals/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { data, error } = await supabase
+      .from('deals')
+      .select('*, stores(name, chain, type)')
+      .eq('id', id)
+      .single();
+    if (error) throw error;
+    if (!data) return res.status(404).json({ error: 'Deal not found' });
+
+    const storeName = (data.stores?.name || '').toLowerCase();
+    const KROGER_FAMILY = ['jewel', 'mariano', "pick 'n save", 'kroger', 'fred meyer', 'king soopers', 'ralphs'];
+    const coupon_type = (data.item_name || '').toLowerCase().includes('final price with card')
+      ? 'loyalty_card' : 'store_sale';
+    let coupon_deep_link = null;
+    if (KROGER_FAMILY.some(k => storeName.includes(k))) {
+      coupon_deep_link = 'https://www.kroger.com/savings/cl/promotions/';
+    } else if (storeName.includes('target')) {
+      coupon_deep_link = data.target_circle_url || null;
+    }
+
+    res.json({ deal: { ...data, coupon_type, coupon_deep_link } });
+  } catch (err) {
+    console.error('GET /api/deals/:id error:', err);
+    res.status(500).json({ error: 'Failed to fetch deal' });
   }
 });
 

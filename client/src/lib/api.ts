@@ -25,6 +25,7 @@ export const deleteItem = (id: string) =>
 export const getStores = () => request<{ stores: Store[] }>('/stores')
 
 // Deals
+export const getDeal = (id: string) => request<{ deal: Deal }>(`/deals/${id}`)
 export const getDeals = (params?: { store_id?: string; category?: string; search?: string }) => {
   const q = new URLSearchParams()
   if (params?.store_id) q.set('store_id', params.store_id)
@@ -107,6 +108,10 @@ export interface Deal {
   source?: string
   source_url?: string
   target_circle_url?: string
+  coupon_type?: string
+  coupon_deep_link?: string | null
+  coupon_barcode?: string | null
+  item_size?: string
   valid_from?: string
   valid_until?: string
   category?: string

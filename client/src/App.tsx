@@ -12,6 +12,9 @@ import { Gas } from '@/pages/Gas'
 import { Amazon } from '@/pages/Amazon'
 import { Donate } from '@/pages/Donate'
 import { More } from '@/pages/More'
+import { Checkout } from '@/pages/Checkout'
+import { Wallet } from '@/pages/Wallet'
+import { DealDetail } from '@/pages/DealDetail'
 import { cn } from '@/lib/utils'
 
 const NAV_ITEMS = [
@@ -60,7 +63,7 @@ function BottomNav() {
 
 function AppLayout() {
   const location = useLocation()
-  const hideNav = location.pathname.startsWith('/stack/')
+  const hideNav = location.pathname.startsWith('/stack/') || location.pathname === '/checkout'
 
   return (
     <div className="min-h-screen bg-provision-bg text-provision-text">
@@ -69,8 +72,11 @@ function AppLayout() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/list" element={<MyList />} />
           <Route path="/deals" element={<Deals />} />
+          <Route path="/deal/:id" element={<DealDetail />} />
           <Route path="/shopping-plan" element={<ShoppingPlan />} />
           <Route path="/stack/:itemId" element={<StackDetail />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/wallet" element={<Wallet />} />
           <Route path="/alerts" element={<Alerts />} />
           <Route path="/pharmacy" element={<Pharmacy />} />
           <Route path="/pantry" element={<Pantry />} />
