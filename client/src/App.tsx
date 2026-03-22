@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { BrowserRouter as Router, Routes, Route, NavLink, useLocation } from 'react-router-dom'
 import { LayoutGrid, Tag, Camera, Package, Bell, MoreHorizontal } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -39,6 +40,21 @@ const NAV_ITEMS: NavItem[] = [
 ]
 
 function BottomNav() {
+  const [clearanceBadge, setClearanceBadge] = useState(0)
+
+  useEffect(() => {
+    fetch('/api/penny-deals/this-week')
+      .then((r) => r.json())
+      .then((data: { deals?: Array<{ spotted_date: string }> }) => {
+        const today = new Date().toISOString().split('T')[0]
+        const todayDeals = (data.deals ?? []).filter(
+          (d) => d.spotted_date && d.spotted_date.startsWith(today)
+        )
+        setClearanceBadge(todayDeals.length)
+      })
+      .catch(() => {})
+  }, [])
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-provision-bg border-t border-provision-border">
       <div className="max-w-lg mx-auto flex items-stretch">
@@ -58,11 +74,18 @@ function BottomNav() {
           >
             {({ isActive }) => (
               <>
-                {item.emoji ? (
-                  <span className="text-[18px] leading-none">{item.emoji}</span>
-                ) : (
-                  item.icon && <item.icon size={20} strokeWidth={isActive ? 2 : 1.5} />
-                )}
+                <span className="relative">
+                  {item.emoji ? (
+                    <span className="text-[18px] leading-none">{item.emoji}</span>
+                  ) : (
+                    item.icon && <item.icon size={20} strokeWidth={isActive ? 2 : 1.5} />
+                  )}
+                  {item.to === '/clearance' && clearanceBadge > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-red-500 text-[8px] font-bold text-white leading-none">
+                      {clearanceBadge > 9 ? '9+' : clearanceBadge}
+                    </span>
+                  )}
+                </span>
                 <span className="text-[10px] font-medium">{item.label}</span>
               </>
             )}
