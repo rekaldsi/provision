@@ -1,0 +1,15 @@
+[
+  { "store": "Costco", "ending": ".97", "signal": "Manager markdown — not restocking", "action": "Buy now", "confidence": "high" },
+  { "store": "Costco", "ending": ".89", "signal": "Further reduced — limited qty remaining", "action": "Buy fast", "confidence": "high" },
+  { "store": "Costco", "ending": ".00", "signal": "Instant rebate (time-limited)", "action": "Stack with membership savings", "confidence": "high" },
+  { "store": "Sam's Club", "ending": ".91", "signal": "Clearance — going soon", "action": "Buy now", "confidence": "high" },
+  { "store": "Sam's Club", "ending": ".88", "signal": "Manager special", "action": "Buy now", "confidence": "high" },
+  { "store": "Sam's Club", "ending": ".98", "signal": "Near-discontinuation signal", "action": "Last chance to buy", "confidence": "high" },
+  { "store": "Sam's Club", "ending": ".00", "signal": "Instant savings event (time-limited)", "action": "Stock up now", "confidence": "high" },
+  { "store": "Walmart", "ending": ".00", "signal": "Clearance markdown", "action": "Buy now", "confidence": "high" },
+  { "store": "Walmart", "ending": ".97", "signal": "Rollback price (temporary)", "action": "Good deal but not final markdown", "confidence": "medium" },
+  { "store": "Walmart", "ending": ".01", "signal": "Penny item — system end-of-life", "action": "Buy everything available", "confidence": "high" },
+  { "store": "Target", "ending": ".01", "signal": "Penny clearance (Tuesday markdown cycle)", "action": "Buy everything available", "confidence": "high" },
+  { "store": "Target", "ending": ".98", "signal": "Final markdown stage — penny incoming", "action": "Check back Tuesday", "confidence": "high" },
+  { "store": "Target", "ending": ".48", "signal": "Clearance in progress", "action": "Watch for further markdowns", "confidence": "medium" }
+]

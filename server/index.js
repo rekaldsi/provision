@@ -8,6 +8,7 @@ const { enrichDeal, categorizeDeal, qualityScore } = require('./services/dealCat
 const { enrichDealRecord } = require('./services/dealEnricher');
 const { classifyStack, classifyDeal, TIERS } = require('./services/alertSystem');
 const { getGasIntelligence } = require('./connectors/gas');
+const clearanceRouter = require('./routes/clearance');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -20,6 +21,7 @@ const supabase = createClient(
 
 app.use(cors());
 app.use(express.json());
+app.use(clearanceRouter);
 
 if (process.env.NODE_ENV === 'production') {
   const path = require('path');

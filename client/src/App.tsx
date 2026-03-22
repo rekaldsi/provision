@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, NavLink, useLocation } from 'react-router-dom'
 import { LayoutGrid, Tag, Package, Bell, MoreHorizontal } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { Dashboard } from '@/pages/Dashboard'
 import { MyList } from '@/pages/MyList'
 import { Deals } from '@/pages/Deals'
@@ -15,12 +16,22 @@ import { Donate } from '@/pages/Donate'
 import { More } from '@/pages/More'
 import { Checkout } from '@/pages/Checkout'
 import { Wallet } from '@/pages/Wallet'
+import { Clearance } from '@/pages/Clearance'
 import { cn } from '@/lib/utils'
 
-const NAV_ITEMS = [
+type NavItem = {
+  to: string
+  label: string
+  exact: boolean
+  icon?: LucideIcon
+  emoji?: string
+}
+
+const NAV_ITEMS: NavItem[] = [
   { to: '/', icon: LayoutGrid, label: 'Home', exact: true },
   { to: '/deals', icon: Tag, label: 'Deals', exact: false },
   { to: '/pantry', icon: Package, label: 'Pantry', exact: false },
+  { to: '/clearance', emoji: '🏷️', label: 'Clearance', exact: false },
   { to: '/alerts', icon: Bell, label: 'Alerts', exact: false },
   { to: '/more', icon: MoreHorizontal, label: 'More', exact: false },
 ]
@@ -45,7 +56,11 @@ function BottomNav() {
           >
             {({ isActive }) => (
               <>
-                <item.icon size={20} strokeWidth={isActive ? 2 : 1.5} />
+                {item.emoji ? (
+                  <span className="text-[18px] leading-none">{item.emoji}</span>
+                ) : (
+                  item.icon && <item.icon size={20} strokeWidth={isActive ? 2 : 1.5} />
+                )}
                 <span className="text-[10px] font-medium">{item.label}</span>
               </>
             )}
@@ -72,6 +87,7 @@ function AppLayout() {
           <Route path="/stack/:itemId" element={<StackDetail />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/wallet" element={<Wallet />} />
+          <Route path="/clearance" element={<Clearance />} />
           <Route path="/alerts" element={<Alerts />} />
           <Route path="/pharmacy" element={<Pharmacy />} />
           <Route path="/pantry" element={<Pantry />} />
