@@ -238,6 +238,42 @@ CREATE TABLE price_signals (
 
 ---
 
+---
+
+### M006 — Scan Intelligence (Barcode Scanner)
+
+**What it is:** A camera-based barcode scanner accessible from anywhere in the app. Scan any product to add it to your pantry, shopping list, or instantly compare prices across nearby stores.
+
+**Three scan flows:**
+
+1. **Add to Pantry** — Scan → product lookup → quantity picker → saved to `pantry_inventory`. Long-term storage flag optional.
+2. **Add to Shopping List** — Scan → product found → one-tap add to list. For "I want this later" moments in-store.
+3. **Price Compare** — Scan → product found → searches Flipp deal database for matching items by name/brand → shows cheapest store right now. Answers "is this a good price?" on the spot.
+
+**Tech stack:**
+- `@zxing/library` — cross-browser camera barcode scanning (no native app, works in mobile Chrome/Safari)
+- Open Food Facts API (`https://world.openfoodfacts.org/api/v0/product/{barcode}.json`) — free, no key, 2M+ products, returns name/brand/category/size
+- UPCitemdb (`https://api.upcitemdb.com/prod/trial/lookup?upc={barcode}`) — free tier (100/day), fallback if Open Food Facts misses
+- Existing Supabase `pantry_inventory` table — no new DB schema needed
+- Existing `/api/list` endpoint — no changes needed
+
+**UI:**
+- Floating scan button (📷) in bottom nav or as a FAB on Pantry + Deals pages
+- Full-screen camera overlay with scan target box
+- After scan: bottom sheet slides up with product info + 3 action buttons: "Add to Pantry" | "Add to List" | "Compare Prices"
+- Price compare result: deal cards for matching items, sorted by price
+
+**Deliverables:**
+- `npm install @zxing/library` in client package.json
+- `client/src/components/BarcodeScanner.tsx` — camera overlay, ZXing integration, scan result callback
+- `client/src/components/ScanActionSheet.tsx` — bottom sheet: product info + 3 CTA buttons
+- `server/services/productLookup.js` — `lookupBarcode(upc)` → tries Open Food Facts, falls back to UPCitemdb, returns `{ name, brand, size, category, image_url }`
+- `/api/product-lookup/:upc` endpoint — GET, returns product info
+- Scan button wired into bottom nav (📷 icon, replaces or supplements existing nav)
+- Price compare: reuses existing `/api/deals` search filtered by item name/brand
+
+---
+
 ## Out of Scope (Phase 8)
 
 - Push notifications for new penny deals (Phase 9)
