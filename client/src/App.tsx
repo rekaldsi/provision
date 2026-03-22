@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react'
 import { BrowserRouter as Router, Routes, Route, NavLink, useLocation } from 'react-router-dom'
-import { LayoutGrid, Tag, Package, Bell, MoreHorizontal } from 'lucide-react'
+import { LayoutGrid, Tag, Camera, Package, Bell, MoreHorizontal } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { Dashboard } from '@/pages/Dashboard'
 import { MyList } from '@/pages/MyList'
 import { Deals } from '@/pages/Deals'
@@ -15,17 +17,44 @@ import { Donate } from '@/pages/Donate'
 import { More } from '@/pages/More'
 import { Checkout } from '@/pages/Checkout'
 import { Wallet } from '@/pages/Wallet'
+import { Clearance } from '@/pages/Clearance'
+import { Scanner } from '@/pages/Scanner'
 import { cn } from '@/lib/utils'
 
-const NAV_ITEMS = [
+type NavItem = {
+  to: string
+  label: string
+  exact: boolean
+  icon?: LucideIcon
+  emoji?: string
+}
+
+const NAV_ITEMS: NavItem[] = [
   { to: '/', icon: LayoutGrid, label: 'Home', exact: true },
   { to: '/deals', icon: Tag, label: 'Deals', exact: false },
+  { to: '/scanner', icon: Camera, label: 'Scan', exact: false },
   { to: '/pantry', icon: Package, label: 'Pantry', exact: false },
+  { to: '/clearance', emoji: '🏷️', label: 'Clearance', exact: false },
   { to: '/alerts', icon: Bell, label: 'Alerts', exact: false },
   { to: '/more', icon: MoreHorizontal, label: 'More', exact: false },
 ]
 
 function BottomNav() {
+  const [clearanceBadge, setClearanceBadge] = useState(0)
+
+  useEffect(() => {
+    fetch('/api/penny-deals/this-week')
+      .then((r) => r.json())
+      .then((data: { deals?: Array<{ spotted_date: string }> }) => {
+        const today = new Date().toISOString().split('T')[0]
+        const todayDeals = (data.deals ?? []).filter(
+          (d) => d.spotted_date && d.spotted_date.startsWith(today)
+        )
+        setClearanceBadge(todayDeals.length)
+      })
+      .catch(() => {})
+  }, [])
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-provision-bg border-t border-provision-border">
       <div className="max-w-lg mx-auto flex items-stretch">
@@ -45,7 +74,18 @@ function BottomNav() {
           >
             {({ isActive }) => (
               <>
-                <item.icon size={20} strokeWidth={isActive ? 2 : 1.5} />
+                <span className="relative">
+                  {item.emoji ? (
+                    <span className="text-[18px] leading-none">{item.emoji}</span>
+                  ) : (
+                    item.icon && <item.icon size={20} strokeWidth={isActive ? 2 : 1.5} />
+                  )}
+                  {item.to === '/clearance' && clearanceBadge > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-red-500 text-[8px] font-bold text-white leading-none">
+                      {clearanceBadge > 9 ? '9+' : clearanceBadge}
+                    </span>
+                  )}
+                </span>
                 <span className="text-[10px] font-medium">{item.label}</span>
               </>
             )}
@@ -58,7 +98,7 @@ function BottomNav() {
 
 function AppLayout() {
   const location = useLocation()
-  const hideNav = location.pathname.startsWith('/stack/') || location.pathname === '/checkout'
+  const hideNav = location.pathname.startsWith('/stack/') || location.pathname === '/checkout' || location.pathname === '/scanner'
 
   return (
     <div className="min-h-screen bg-provision-bg text-provision-text">
@@ -72,6 +112,8 @@ function AppLayout() {
           <Route path="/stack/:itemId" element={<StackDetail />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/wallet" element={<Wallet />} />
+          <Route path="/scanner" element={<Scanner />} />
+          <Route path="/clearance" element={<Clearance />} />
           <Route path="/alerts" element={<Alerts />} />
           <Route path="/pharmacy" element={<Pharmacy />} />
           <Route path="/pantry" element={<Pantry />} />

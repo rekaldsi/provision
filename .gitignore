@@ -5,3 +5,4 @@ dist/
 client/dist/
 *.log
 .DS_Store
+.serena/

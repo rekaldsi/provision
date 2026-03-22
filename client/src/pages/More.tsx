@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { List, CalendarCheck, Fuel, ShoppingBag, Heart, Stethoscope } from 'lucide-react'
+import { List, CalendarCheck, Fuel, ShoppingBag, Heart, Stethoscope, Wallet } from 'lucide-react'
 
 const HUB_ITEMS = [
   {
@@ -19,6 +19,15 @@ const HUB_ITEMS = [
     color: 'text-blue-400',
     bg: 'bg-blue-900/20',
     border: 'border-blue-700/30',
+  },
+  {
+    to: '/wallet',
+    icon: Wallet,
+    label: 'Coupon Wallet',
+    desc: 'Your saved coupons',
+    color: 'text-purple-400',
+    bg: 'bg-purple-900/20',
+    border: 'border-purple-700/30',
   },
   {
     to: '/gas',
@@ -63,7 +72,7 @@ export function More() {
     <div className="space-y-4 animate-fade-in">
       <div>
         <h1 className="text-xl font-bold text-provision-text">More</h1>
-        <p className="text-provision-dim text-sm">My List · Shopping Plan · Gas · Pharmacy · Amazon · Donate</p>
+        <p className="text-provision-dim text-sm">My List · Shopping Plan · Wallet · Gas · Pharmacy · Amazon · Donate</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
