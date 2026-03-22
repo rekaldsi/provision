@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, NavLink, useLocation } from 'react-router-dom'
-import { LayoutGrid, Tag, Package, Bell, MoreHorizontal } from 'lucide-react'
+import { LayoutGrid, Tag, Camera, Package, Bell, MoreHorizontal } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Dashboard } from '@/pages/Dashboard'
 import { MyList } from '@/pages/MyList'
@@ -17,6 +17,7 @@ import { More } from '@/pages/More'
 import { Checkout } from '@/pages/Checkout'
 import { Wallet } from '@/pages/Wallet'
 import { Clearance } from '@/pages/Clearance'
+import { Scanner } from '@/pages/Scanner'
 import { cn } from '@/lib/utils'
 
 type NavItem = {
@@ -30,6 +31,7 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { to: '/', icon: LayoutGrid, label: 'Home', exact: true },
   { to: '/deals', icon: Tag, label: 'Deals', exact: false },
+  { to: '/scanner', icon: Camera, label: 'Scan', exact: false },
   { to: '/pantry', icon: Package, label: 'Pantry', exact: false },
   { to: '/clearance', emoji: '🏷️', label: 'Clearance', exact: false },
   { to: '/alerts', icon: Bell, label: 'Alerts', exact: false },
@@ -73,7 +75,7 @@ function BottomNav() {
 
 function AppLayout() {
   const location = useLocation()
-  const hideNav = location.pathname.startsWith('/stack/') || location.pathname === '/checkout'
+  const hideNav = location.pathname.startsWith('/stack/') || location.pathname === '/checkout' || location.pathname === '/scanner'
 
   return (
     <div className="min-h-screen bg-provision-bg text-provision-text">
@@ -87,6 +89,7 @@ function AppLayout() {
           <Route path="/stack/:itemId" element={<StackDetail />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/wallet" element={<Wallet />} />
+          <Route path="/scanner" element={<Scanner />} />
           <Route path="/clearance" element={<Clearance />} />
           <Route path="/alerts" element={<Alerts />} />
           <Route path="/pharmacy" element={<Pharmacy />} />
