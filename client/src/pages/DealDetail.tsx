@@ -72,7 +72,7 @@ export function DealDetail() {
           <div className="flex-1 min-w-0">
             <StoreBadge name={storeName} size="md" />
             <h1 className="text-lg font-bold text-provision-text mt-2 leading-snug">{deal.item_name}</h1>
-            {deal.item_brand && (
+            {deal.item_brand && !deal.item_name?.toLowerCase().startsWith(deal.item_brand.toLowerCase()) && (
               <p className="text-sm text-provision-dim mt-0.5">{deal.item_brand}</p>
             )}
           </div>

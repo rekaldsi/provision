@@ -120,7 +120,7 @@ export function DealCard({ deal, className }: DealCardProps) {
                 )}
               </div>
               <p className="text-sm font-medium text-provision-text leading-tight">
-                {deal.item_brand && (
+                {deal.item_brand && !deal.item_name?.toLowerCase().startsWith(deal.item_brand.toLowerCase()) && (
                   <span className="text-provision-dim mr-1">{deal.item_brand}</span>
                 )}
                 {dedupeProductName(deal.item_name, deal.item_brand)}
