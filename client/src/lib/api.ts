@@ -270,3 +270,32 @@ export interface WalmartGeneric {
   qty30: number
   qty90: number
 }
+
+// Chicagoland Deals (Phase 9)
+export interface ChicagolandDeal {
+  id?: string
+  store: string
+  item: string
+  category?: string
+  price: number
+  original_price?: number
+  savings_pct?: number
+  spotted_date: string
+  source_url?: string
+  source_name?: string
+  location_type?: string
+  store_id?: string
+  zip_code?: string
+  chicagoland?: boolean
+  tier?: string | null
+}
+
+export async function getChicagolandDeals(tier?: string, store?: string): Promise<{ deals: ChicagolandDeal[]; count: number }> {
+  const params = new URLSearchParams()
+  if (tier) params.append('tier', tier)
+  if (store) params.append('store', store)
+  const query = params.toString() ? `?${params.toString()}` : ''
+  const res = await fetch(`/api/chicagoland-deals${query}`)
+  if (!res.ok) return { deals: [], count: 0 }
+  return res.json()
+}

@@ -153,4 +153,55 @@ router.post('/api/pallet-value', (req, res) => {
   return res.json(getPalletValue(price, qty));
 });
 
+// ── Chicagoland Deals (Phase 9) ──────────────────────────────────────────────
+
+router.get('/api/chicagoland-deals', async (req, res) => {
+  // Simple in-memory cache (30 min)
+  const now = Date.now();
+  const cacheKey = `chicagoland_${req.query.tier || ''}_${req.query.store || ''}`;
+  if (!router._cgCache) router._cgCache = {};
+  const cached = router._cgCache[cacheKey];
+  if (cached && now - cached.at < 30 * 60 * 1000) {
+    return res.json(cached.data);
+  }
+
+  try {
+    let supabase;
+    try {
+      ({ supabase } = require('../db/supabase'));
+    } catch (_) {
+      try {
+        supabase = require('../db/supabaseClient');
+      } catch (__) {
+        supabase = null;
+      }
+    }
+
+    if (!supabase) {
+      return res.json({ deals: [], count: 0 });
+    }
+
+    const { tier, store } = req.query;
+    let query = supabase
+      .from('penny_deals')
+      .select('*')
+      .eq('chicagoland', true)
+      .order('spotted_date', { ascending: false })
+      .limit(100);
+
+    if (tier) query = query.eq('tier', tier.toUpperCase());
+    if (store) query = query.ilike('store', `%${store}%`);
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const result = { deals: data || [], count: (data || []).length };
+    router._cgCache[cacheKey] = { at: now, data: result };
+    return res.json(result);
+  } catch (err) {
+    console.error('chicagoland-deals error:', err.message);
+    return res.json({ deals: [], count: 0 });
+  }
+});
+
 module.exports = router;

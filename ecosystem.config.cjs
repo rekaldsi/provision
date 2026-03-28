@@ -18,5 +18,13 @@ module.exports = {
       autorestart: false,
       watch: false,
     },
+    {
+      name: 'chicagoland-sweep',
+      script: 'server/jobs/chicagoland-sweep.js',
+      cron_restart: '0 6,14 * * *', // 6 AM + 2 PM CST
+      watch: false,
+      autorestart: false,
+      env: { NODE_ENV: 'production', TZ: 'America/Chicago' },
+    },
   ],
 };

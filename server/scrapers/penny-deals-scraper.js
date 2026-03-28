@@ -17,6 +17,16 @@ const SOURCES = [
     rssUrl: 'https://thekrazycouponlady.com/feed/',
     keywords: ['penny', '0.01', '$0.01', 'penny item', 'penny deal'],
   },
+  {
+    name: 'ExtremeCouponing',
+    rssUrl: 'https://www.reddit.com/r/extremecouponing.rss',
+    keywords: ['penny', '0.01', '$0.01', 'clearance', 'markdown', 'deal'],
+  },
+  {
+    name: 'Slickdeals',
+    rssUrl: 'https://slickdeals.net/newsearch.php?mode=frontpage&searcharea=deals&searchin=first&rss=1',
+    keywords: ['penny', '0.01', '$0.01', 'clearance', 'markdown', 'deal'],
+  },
 ];
 
 const STORE_NAMES = [
