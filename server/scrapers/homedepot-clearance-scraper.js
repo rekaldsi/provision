@@ -1,6 +1,5 @@
 'use strict';
 const axios = require('axios');
-const { CHICAGOLAND_STORES } = require('../services/chicagolandRegistry');
 
 const CHROME_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
 
@@ -8,68 +7,101 @@ function todayStr() {
   return new Date().toISOString().slice(0, 10);
 }
 
-async function scrapeStoreId(storeId) {
-  const url = `https://www.homedepot.com/b/Special-Values-Clearance/N-5yc1vZc7vb?storeId=${storeId}&Nao=0`;
+function extractPrice(text) {
+  const m = text.match(/\$?([\d,]+\.?\d*)/);
+  return m ? parseFloat(m[1].replace(',', '')) : 0;
+}
 
-  const res = await axios.get(url, {
-    headers: {
-      'User-Agent': CHROME_UA,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      'Accept-Language': 'en-US,en;q=0.9',
-    },
-    timeout: 15000,
-  });
+function decodeHtmlEntities(str) {
+  return str
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
+    .trim();
+}
 
-  const html = res.data;
-  const m = html.match(/<script[^>]*id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
-  if (!m) return [];
-
-  const data = JSON.parse(m[1]);
-  const products =
-    data?.props?.pageProps?.initialData?.searchModel?.products ||
-    data?.props?.pageProps?.searchModel?.products ||
-    [];
-
+async function scrapeSlickdeals() {
   const today = todayStr();
+  const deals = [];
 
-  return products.map((p) => {
-    const price = parseFloat(p?.pricing?.value || p?.pricing?.specialPrice || 0);
-    const regPrice = parseFloat(p?.pricing?.original || p?.pricing?.wasPrice || 0);
-    const savingsPct = regPrice > 0 ? Math.round(((regPrice - price) / regPrice) * 100) : 0;
-    const productUrl = p?.identifiers?.canonicalUrl
-      ? `https://www.homedepot.com${p.identifiers.canonicalUrl}`
-      : 'https://www.homedepot.com/b/Special-Values-Clearance/N-5yc1vZc7vb';
+  const feeds = [
+    'https://slickdeals.net/newsearch.php?mode=frontpage&searcharea=deals&q=home+depot+clearance&rss=1',
+    'https://slickdeals.net/newsearch.php?mode=frontpage&searcharea=deals&q=home+depot+%240.01+penny&rss=1',
+    'https://slickdeals.net/newsearch.php?mode=frontpage&searcharea=deals&q=home+depot+clearance+%2460&rss=1',
+  ];
 
-    return {
-      store: 'Home Depot',
-      item: p?.identifiers?.productLabel || p?.identifiers?.brandName || 'Unknown Item',
-      category: 'Clearance',
-      price,
-      original_price: regPrice,
-      savings_pct: savingsPct,
-      spotted_date: today,
-      source_url: productUrl,
-      source_name: 'Home Depot Clearance',
-      location_type: 'in_store',
-      store_id: storeId,
-      chicagoland: true,
-      zip_code: null,
-    };
+  for (const feedUrl of feeds) {
+    try {
+      const res = await axios.get(feedUrl, {
+        headers: { 'User-Agent': CHROME_UA, Accept: 'application/rss+xml,application/xml,text/xml' },
+        timeout: 12000,
+      });
+
+      const items = res.data.match(/<item>[\s\S]*?<\/item>/g) || [];
+
+      for (const item of items) {
+        const rawTitle = decodeHtmlEntities(item.match(/<title>([\s\S]*?)<\/title>/)?.[1] || '');
+        const link = decodeHtmlEntities(item.match(/<link>([\s\S]*?)<\/link>/)?.[1] || item.match(/<guid[^>]*>([\s\S]*?)<\/guid>/)?.[1] || '');
+        const desc = decodeHtmlEntities(item.match(/<description>([\s\S]*?)<\/description>/)?.[1] || '');
+
+        if (!rawTitle) continue;
+
+        // Extract price from title
+        const priceMatch = rawTitle.match(/\$\s*([\d,]+\.?\d*)/);
+        const price = priceMatch ? parseFloat(priceMatch[1].replace(',', '')) : 0;
+
+        // Try to extract original price from description
+        const origMatch = desc.match(/(?:was|reg(?:ular)?|original|retail)[:\s]*\$\s*([\d,]+\.?\d*)/i);
+        const originalPrice = origMatch ? parseFloat(origMatch[1].replace(',', '')) : 0;
+
+        const savingsPct = originalPrice > 0 && price > 0
+          ? Math.round(((originalPrice - price) / originalPrice) * 100)
+          : 0;
+
+        // Clean up title — remove price suffix
+        const cleanTitle = rawTitle.replace(/\s*\$[\d,]+\.?\d*\s*$/, '').replace(/\s+/g, ' ').trim();
+
+        deals.push({
+          store: 'Home Depot',
+          item: cleanTitle,
+          category: 'Clearance',
+          price,
+          original_price: originalPrice,
+          savings_pct: savingsPct,
+          spotted_date: today,
+          source_url: link || 'https://slickdeals.net',
+          source_name: 'Slickdeals / Home Depot',
+          location_type: 'in_store',
+          store_id: null,
+          chicagoland: true,
+          zip_code: '60641',
+          verified: false,
+        });
+      }
+    } catch (err) {
+      console.error('[homedepot-scraper] feed error:', err.message);
+    }
+  }
+
+  // Dedupe by source_url
+  const seen = new Set();
+  return deals.filter(d => {
+    if (seen.has(d.source_url)) return false;
+    seen.add(d.source_url);
+    return true;
   });
 }
 
 async function scrape() {
-  const allDeals = [];
-  for (const storeId of CHICAGOLAND_STORES.homedepot.storeIds) {
-    try {
-      const deals = await scrapeStoreId(storeId);
-      allDeals.push(...deals);
-    } catch (err) {
-      console.error(`[homedepot-scraper] storeId=${storeId} error:`, err.message);
-    }
+  try {
+    return await scrapeSlickdeals();
+  } catch (err) {
+    console.error('[homedepot-scraper] fatal error:', err.message);
+    return [];
   }
-  return allDeals;
 }
 
 scrape.scraperName = 'homedepot-clearance';
-module.exports = { scrape };
+module.exports = { scrape, scraperName: 'homedepot-clearance' };
