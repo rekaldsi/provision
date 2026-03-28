@@ -166,18 +166,12 @@ router.get('/api/chicagoland-deals', async (req, res) => {
   }
 
   try {
-    let supabase;
-    try {
-      ({ supabase } = require('../db/supabase'));
-    } catch (_) {
-      try {
-        supabase = require('../db/supabaseClient');
-      } catch (__) {
-        supabase = null;
-      }
-    }
-
-    if (!supabase) {
+    const { createClient } = require('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY
+    );
+    if (!process.env.SUPABASE_URL) {
       return res.json({ deals: [], count: 0 });
     }
 
