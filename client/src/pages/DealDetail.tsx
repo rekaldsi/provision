@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Tag } from 'lucide-react'
-import { getDeal, type Deal } from '@/lib/api'
-import { formatPrice } from '@/lib/utils'
+import { ArrowLeft, Tag, ShoppingCart, CheckCircle2 } from 'lucide-react'
+import { getDeal, addToListFromDeal, type Deal } from '@/lib/api'
+import { formatPrice, cn } from '@/lib/utils'
 import { StoreBadge } from '@/components/StoreBadge'
 
 export function DealDetail() {
@@ -10,6 +10,19 @@ export function DealDetail() {
   const [deal, setDeal] = useState<Deal | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [added, setAdded] = useState(false)
+  const [adding, setAdding] = useState(false)
+
+  async function handleAddToList() {
+    if (!deal || adding || added) return
+    setAdding(true)
+    try {
+      await addToListFromDeal(deal)
+      setAdded(true)
+      setTimeout(() => setAdded(false), 3000)
+    } catch { /* noop */ }
+    setAdding(false)
+  }
 
   useEffect(() => {
     if (!id) return
@@ -117,6 +130,24 @@ export function DealDetail() {
             Open {storeName} App →
           </a>
         )}
+
+        {/* Add to List */}
+        <button
+          onClick={handleAddToList}
+          disabled={adding}
+          className={cn(
+            'w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold border transition-colors',
+            added
+              ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400'
+              : 'bg-provision-surface border-provision-border text-provision-dim hover:text-provision-text hover:border-provision-savings/50'
+          )}
+        >
+          {added ? (
+            <><CheckCircle2 size={15} /> Added to List</>
+          ) : (
+            <><ShoppingCart size={15} /> {adding ? 'Adding...' : 'Add to My List'}</>
+          )}
+        </button>
       </div>
     </div>
   )

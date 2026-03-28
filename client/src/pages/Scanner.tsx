@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Camera, CheckCircle2 } from 'lucide-react'
+import { Camera, CheckCircle2, Keyboard } from 'lucide-react'
 import { BarcodeScanner } from '@/components/BarcodeScanner'
 import { ScanActionSheet } from '@/components/ScanActionSheet'
 
@@ -125,9 +125,21 @@ export function Scanner() {
     }
   }
 
+  const [manualUpc, setManualUpc] = useState('')
+  const [showManual, setShowManual] = useState(false)
+
+  const handleManualSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    const trimmed = manualUpc.trim()
+    if (!trimmed) return
+    handleScanResult(trimmed)
+    setManualUpc('')
+    setShowManual(false)
+  }
+
   return (
     <div className="relative min-h-[calc(100vh-9rem)] animate-fade-in">
-      <div className="flex h-full min-h-[calc(100vh-9rem)] items-center justify-center">
+      <div className="flex h-full min-h-[calc(100vh-9rem)] flex-col items-center justify-center gap-4">
         <button
           type="button"
           onClick={() => setScanState('scanning')}
@@ -139,6 +151,41 @@ export function Scanner() {
           <p className="text-sm font-semibold text-provision-text">Tap to Scan</p>
           <p className="text-xs text-provision-dim">Point camera at a barcode</p>
         </button>
+
+        {/* Manual UPC entry fallback (desktop / no camera) */}
+        {!showManual ? (
+          <button
+            type="button"
+            onClick={() => setShowManual(true)}
+            className="flex items-center gap-1.5 text-xs text-provision-dim hover:text-provision-text transition-colors"
+          >
+            <Keyboard size={13} />
+            Enter UPC manually
+          </button>
+        ) : (
+          <form onSubmit={handleManualSubmit} className="flex items-center gap-2 w-full max-w-xs">
+            <input
+              autoFocus
+              className="flex-1 bg-provision-surface border border-provision-border rounded-lg px-3 py-2 text-sm text-provision-text placeholder:text-provision-dim focus:outline-none focus:border-provision-savings"
+              placeholder="Enter UPC / barcode..."
+              value={manualUpc}
+              onChange={e => setManualUpc(e.target.value)}
+            />
+            <button
+              type="submit"
+              className="px-3 py-2 bg-provision-savings text-black font-semibold rounded-lg text-xs hover:bg-green-300 transition-colors"
+            >
+              Look up
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowManual(false)}
+              className="text-xs text-provision-muted hover:text-provision-dim"
+            >
+              ✕
+            </button>
+          </form>
+        )}
       </div>
 
       {scanState === 'scanning' && (

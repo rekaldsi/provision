@@ -251,7 +251,9 @@ export function Alerts() {
                     )}
                   </div>
                 </div>
-                <p className="text-xs text-provision-dim">Matched: Hot Deals filter</p>
+                <p className="text-xs text-provision-dim">
+                  {discountPct && discountPct > 0 ? `${discountPct}% off` : 'High-value deal'} this week
+                </p>
               </div>
             )
           })}

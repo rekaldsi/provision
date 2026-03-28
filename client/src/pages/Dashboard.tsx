@@ -66,14 +66,14 @@ export function Dashboard() {
         />
         <DashboardCard
           label="Near Free"
-          value={loading ? '—' : String(nearFreeMatches.length)}
+          value={loading ? '—' : String(nearFreeMatches.length > 0 ? nearFreeMatches.length : (stats?.near_free_deals ?? 0))}
           icon={Zap}
           variant="near-free"
           sublabel="< $0.25 final"
         />
         <DashboardCard
           label="Hot Alerts"
-          value={loading ? '—' : String(alerts)}
+          value={loading ? '—' : String(alerts > 0 ? alerts : (stats?.hot_deals ?? 0))}
           icon={Bell}
           variant="savings"
           sublabel="≥40% off"

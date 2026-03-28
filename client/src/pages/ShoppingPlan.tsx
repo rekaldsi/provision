@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { CalendarCheck, TrendingDown, Zap, Gift, ShoppingCart } from 'lucide-react'
 import { getShoppingPlan, type ShoppingPlanResponse } from '@/lib/api'
 import { ShoppingPlanList } from '@/components/ShoppingPlanList'
-import { formatPrice } from '@/lib/utils'
+import { formatSavings } from '@/lib/utils'
 import { DashboardCard } from '@/components/DashboardCard'
 
 export function ShoppingPlan() {
@@ -42,7 +42,7 @@ export function ShoppingPlan() {
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <DashboardCard
                 label="Total Savings"
-                value={formatPrice(plan.total_savings)}
+                value={formatSavings(plan.total_savings)}
                 icon={TrendingDown}
                 variant="savings"
               />

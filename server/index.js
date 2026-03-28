@@ -736,11 +736,18 @@ app.get('/api/stats', async (req, res) => {
       { count: dealsCount },
       { count: itemsCount },
       { count: nearFreeCount },
+      { count: hotCount },
       { count: rxCount },
     ] = await Promise.all([
       supabase.from('deals').select('*', { count: 'exact', head: true })
         .or(`valid_until.is.null,valid_until.gte.${today}`),
       supabase.from('items').select('*', { count: 'exact', head: true }),
+      // Near Free = actual sale_price under $0.25
+      supabase.from('deals').select('*', { count: 'exact', head: true })
+        .or(`valid_until.is.null,valid_until.gte.${today}`)
+        .gte('sale_price', 0)
+        .lt('sale_price', 0.25),
+      // Hot Alerts = 40%+ discount
       supabase.from('deals').select('*', { count: 'exact', head: true })
         .or(`valid_until.is.null,valid_until.gte.${today}`)
         .gte('discount_pct', 40),
@@ -751,6 +758,7 @@ app.get('/api/stats', async (req, res) => {
       active_deals: dealsCount || 0,
       list_items: itemsCount || 0,
       near_free_deals: nearFreeCount || 0,
+      hot_deals: hotCount || 0,
       rx_tracked: rxCount || 0,
     });
   } catch (err) {

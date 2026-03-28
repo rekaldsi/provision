@@ -1,5 +1,5 @@
 import { MapPin, ShoppingCart } from 'lucide-react'
-import { cn, formatPrice } from '@/lib/utils'
+import { cn, formatPrice, formatSavings } from '@/lib/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { StoreBadge } from '@/components/StoreBadge'
@@ -52,7 +52,7 @@ function TripCard({ trip, tripNumber }: { trip: ShoppingPlanTrip; tripNumber: nu
           </div>
           <div className="text-right">
             <p className="text-lg font-bold text-emerald-400">
-              Save {formatPrice(trip.trip_savings)}
+              Save {formatSavings(trip.trip_savings)}
             </p>
             <p className="text-xs text-provision-dim">
               Total: {formatPrice(trip.trip_total)}

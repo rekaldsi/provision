@@ -14,6 +14,7 @@ export function formatPrice(price: number | null | undefined): string {
 
 export function formatSavings(savings: number | null | undefined): string {
   if (savings == null) return '—'
+  if (savings <= 0) return '$0.00'
   return `$${savings.toFixed(2)}`
 }
 
