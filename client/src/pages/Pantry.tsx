@@ -191,7 +191,7 @@ export function Pantry() {
         <div className="flex items-center gap-2 mb-1">
           <Package size={18} className="text-provision-savings" />
           <h1 className="text-xl font-bold text-provision-text">Pantry</h1>
-          <span className="px-2 py-0.5 bg-provision-surface border border-provision-border rounded-full text-xs text-provision-dim">{items.length} items</span>
+          <span className="px-2 py-0.5 bg-provision-surface border border-provision-border rounded-full text-xs text-provision-dim">{items.length} {items.length === 1 ? 'item' : 'items'}</span>
         </div>
         <p className="text-provision-dim text-sm">Track what you have. Waste less. Buy only what you need.</p>
       </div>

@@ -206,6 +206,7 @@ export interface Stats {
   active_deals: number
   list_items: number
   near_free_deals: number
+  hot_deals?: number
   rx_tracked?: number
 }
 

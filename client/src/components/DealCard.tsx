@@ -7,6 +7,57 @@ import { Badge } from '@/components/ui/badge'
 import { StoreBadge } from '@/components/StoreBadge'
 import { addToListFromDeal, type Deal } from '@/lib/api'
 
+const CATEGORY_LABELS: Record<string, string> = {
+  food: 'Food',
+  household: 'Household',
+  home_improvement: 'Home Improvement',
+  personal_care: 'Personal Care',
+  pharmacy: 'Pharmacy',
+  auto: 'Auto',
+  electronics: 'Electronics',
+  clothing: 'Clothing',
+  garden: 'Garden',
+  pet: 'Pet',
+  baby: 'Baby',
+  sports: 'Sports',
+}
+
+function formatCategory(cat: string): string {
+  if (!cat) return ''
+  // Handle dotted subcategory like "food.protein" → "Food › Protein"
+  return cat.split('.').map(part =>
+    CATEGORY_LABELS[part] ?? part.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+  ).join(' › ')
+}
+
+/** Strip brand prefix from product name if it was accidentally duplicated by the scraper.
+ *  e.g. brand="Bounty", name="BountyBounty Paper Towels" → "Bounty Paper Towels"
+ *  Also removes leading brand repetition: "Bounty Bounty Paper Towels" → "Bounty Paper Towels"
+ */
+function dedupeProductName(name: string, brand?: string | null): string {
+  if (!name) return name
+  // Pattern 1: exact brand doubled without space — "BountyBounty" → "Bounty"
+  if (brand) {
+    const doubled = brand + brand
+    if (name.startsWith(doubled)) {
+      return brand + name.slice(doubled.length)
+    }
+    // Pattern 2: brand repeated with space — "Bounty Bounty Paper Towels"
+    const doubledSpaced = brand + ' ' + brand
+    if (name.toLowerCase().startsWith(doubledSpaced.toLowerCase())) {
+      return name.slice(brand.length + 1)
+    }
+  }
+  // Pattern 3: repeated word at start — "Canned Canned Tamales" → "Canned Tamales"
+  const words = name.split(' ')
+  const deduped: string[] = []
+  for (let i = 0; i < words.length; i++) {
+    if (i > 0 && words[i].toLowerCase() === words[i - 1].toLowerCase()) continue
+    deduped.push(words[i])
+  }
+  return deduped.join(' ')
+}
+
 interface DealCardProps {
   deal: Deal & { tier?: { label: string; color: string; bgColor: string; emoji: string } }
   className?: string
@@ -65,14 +116,14 @@ export function DealCard({ deal, className }: DealCardProps) {
                   <span className="text-xs text-violet-400 font-medium">Store Brand</span>
                 )}
                 {deal.category && (
-                  <span className="text-xs text-provision-dim">{deal.category.replace('.', ' › ')}</span>
+                  <span className="text-xs text-provision-dim">{formatCategory(deal.category)}</span>
                 )}
               </div>
               <p className="text-sm font-medium text-provision-text leading-tight">
                 {deal.item_brand && (
                   <span className="text-provision-dim mr-1">{deal.item_brand}</span>
                 )}
-                {deal.item_name}
+                {dedupeProductName(deal.item_name, deal.item_brand)}
               </p>
               {deal.unit && (
                 <p className="text-xs text-provision-dim mt-0.5">{deal.unit}</p>
